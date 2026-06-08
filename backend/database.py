@@ -7,7 +7,7 @@ import os
 load_dotenv(override=False)
 
 DATABASE_URL = os.getenv('DATABASE_URL')
-
+print(f"DATABASE_URL is: {DATABASE_URL}")
 for i in range(5):
     try:
         engine = create_engine(DATABASE_URL, echo=True)
