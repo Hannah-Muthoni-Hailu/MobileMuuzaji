@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#FFFFFF">
+
+    <!-- Top section: image and text, takes up all available space above the buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="32dp">
+
+        <!-- Onboarding image -->
+        <ImageView
+            android:id="@+id/ivOnboardingImage"
+            android:layout_width="280dp"
+            android:layout_height="280dp"
+            android:scaleType="fitCenter"
+            android:contentDescription="Onboarding illustration"/>
+
+        <!-- Title text -->
+        <TextView
+            android:id="@+id/tvOnboardingTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:gravity="center"
+            android:textSize="22sp"
+            android:textStyle="bold"/>
+
+        <!-- Description text -->
+        <TextView
+            android:id="@+id/tvOnboardingDescription"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:gravity="center"
+            android:textSize="16sp"/>
+
+    </LinearLayout>
+
+    <!-- Bottom section: skip and next buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="24dp">
+
+        <!-- Skip button aligned to the left -->
+        <Button
+            android:id="@+id/btnSkip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Skip"
+            android:backgroundTint="#FFFFFF"
+            android:textColor="#888888"/>
+
+        <!-- Spacer pushes Next button to the right -->
+        <View
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"/>
+
+        <!-- Next button aligned to the right -->
+        <Button
+            android:id="@+id/btnNext"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Next"/>
+
+    </LinearLayout>
+
+</LinearLayout>
