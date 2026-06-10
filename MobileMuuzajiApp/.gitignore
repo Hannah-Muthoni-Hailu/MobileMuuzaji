@@ -1,0 +1,18 @@
+# Gradle generated files
+.gradle/
+.kotlin/
+build/
+gradle/wrapper/gradle-wrapper.jar
+
+# Android Studio / IDE files
+.idea/
+*.iml
+local.properties
+
+# Generated APKs and bundles
+*.apk
+*.aab
+
+# OS files
+.DS_Store
+Thumbs.db
