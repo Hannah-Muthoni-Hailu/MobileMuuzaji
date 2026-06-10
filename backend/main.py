@@ -196,6 +196,24 @@ def newOrg(org: NewOrgModel, db: Session =  Depends(get_db)):
         logger.error(f"Database/Server failure: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal Server error")
 
+@app.get("/organization/{org_id}")
+def getOrganization(org_id: int, db: Session = Depends(get_db)):
+    organization = db.query(Organization).filter(Organization.id == org_id).first()
+
+    if not organization:
+        raise HTTPException(status_code=404, detail="Organization not found")
+
+    organization_data = {
+        "id": organization.id,
+        "name": organization.name,
+        "admin_name": organization.admin.name,
+        "employees": organization.employees,
+        "inv_items": organization.inv_items,
+        "sales_items": organization.sales_items
+    }
+    
+    return {"organization": organization_data}
+
 @app.post("/new-employee")
 def newEmployee(employee: EmployeesModel, db: Session = Depends(get_db)):
     try:
