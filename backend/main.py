@@ -266,7 +266,7 @@ def newProduct(product: InventoryItem, db: Session = Depends(get_db)):
             "org_id": inventory_item.org_id
         }
 
-        return { item_result }
+        return item_result
     except Exception as e:
         logger.error(f"Database/Server failure: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal Server error")
