@@ -206,6 +206,7 @@ def getOrganization(org_id: int, db: Session = Depends(get_db)):
     organization_data = {
         "id": organization.id,
         "name": organization.org_name,
+        "admin_id": organization.admin.name,
         "admin_name": organization.admin.name,
         "employees": organization.employees,
         "inv_items": organization.inv_items,
