@@ -285,11 +285,15 @@ def edit_product(product: EditInventoryItem, db: Session = Depends(get_db)):
         db.commit()
         db.refresh(inventory_item)
 
-        organization = db.query(Organization).filter(Organization.id == product.org_id).first()
-        inventory = organization.inv_items
-        sales = organization.sales_items
+        item_result = {
+            "item_name": inventory_item.item_name,
+            "item_quantity": inventory_item.item_quantity,
+            "unit": inventory_item.unit,
+            "cost_per_unit": inventory_item.cost_per_unit,
+            "org_id": inventory_item.org_id
+        }
 
-        return {"message": "item updated", "organization": organization}
+        return item_result
     except Exception as e:
         logger.error(f"Database/Server failure: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal Server error")
