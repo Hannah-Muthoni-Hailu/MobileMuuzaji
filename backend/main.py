@@ -109,6 +109,13 @@ class EditInventoryItem(BaseModel):
     cost_per_unit: int | None = None
     org_id: int
 
+class UpdateInventoryRequest(BaseModel):
+    name: str
+    quantity: int
+    unit: Units
+    cost_per_unit: int
+    org_id: int
+
 class SaleModel(BaseModel):
     item_id: int
     quantity_sold: int
@@ -297,7 +304,23 @@ def edit_product(product: EditInventoryItem, db: Session = Depends(get_db)):
     except Exception as e:
         logger.error(f"Database/Server failure: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal Server error")
-    
+
+@app.put("/update-product/{item_id}")
+def update_product(item_id: int, item: UpdateInventoryRequest, db: Session = Depends(get_db)):
+    db_item = db.query(Inventory).filter(Inventory.id == item_id).first()
+
+    if not db_item:
+        raise HTTPException(status_code=404, detail="Item not found")
+
+    db_item.item_name     = item.item_name
+    db_item.item_quantity = item.item_quantity
+    db_item.unit          = item.unit
+    db_item.cost_per_unit = item.cost_per_unit
+
+    db.commit()
+    db.refresh(db_item)
+    return db_item
+
 @app.post("/sale")
 def sale(saleitem: SaleModel, db: Session = Depends(get_db)):
     try:
