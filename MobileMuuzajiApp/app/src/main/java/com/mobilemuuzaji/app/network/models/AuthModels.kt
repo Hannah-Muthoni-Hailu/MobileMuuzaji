@@ -68,6 +68,23 @@ data class OrganizationDetailsResponse(
     val organization: OrganizationDetails
 )
 
+data class NewInventoryRequest(
+    val name:          String,
+    val quantity:      Int,
+    val unit:          String,
+    val cost_per_unit: Int,
+    val org_id:        Int
+)
+
+data class InventoryItemResponse(
+    val id:            Int,
+    val item_name:     String,
+    val item_quantity: Int,
+    val unit:          String,
+    val cost_per_unit: Int,
+    val org_id:        Int
+)
+
 // Returned when validation fails
 data class ErrorResponse(
     val detail: Any?  = null,   // Pydantic validation errors

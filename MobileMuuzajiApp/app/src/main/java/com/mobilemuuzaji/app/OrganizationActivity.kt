@@ -28,6 +28,11 @@ import android.widget.ImageButton
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.inputmethod.InputMethodManager
+import android.app.Dialog
+import android.view.Window
+import com.mobilemuuzaji.app.network.models.NewInventoryRequest
+import com.google.gson.Gson
+import com.mobilemuuzaji.app.network.models.ErrorResponse
 
 class OrganizationActivity : AppCompatActivity() {
 
@@ -100,7 +105,7 @@ class OrganizationActivity : AppCompatActivity() {
 
         // Dummy button
         btnNewInventory.setOnClickListener {
-            // TODO: implement new inventory
+            showNewInventoryDialog()
         }
 
         // Toggle search bar visibility when search icon is tapped
@@ -268,6 +273,25 @@ class OrganizationActivity : AppCompatActivity() {
         }
     }
 
+    private fun parseErrorMessage(errorBody: String?): String {
+        if (errorBody == null) return "An unexpected error occurred"
+        return try {
+            val errorResponse = Gson().fromJson(errorBody, ErrorResponse::class.java)
+            when (val detail = errorResponse.detail) {
+                is String   -> detail
+                is List<*>  -> {
+                    val map  = (detail.firstOrNull()) as? Map<*, *>
+                    val loc  = (map?.get("loc") as? List<*>)?.lastOrNull() ?: "field"
+                    val msg  = map?.get("msg") ?: "Unknown error"
+                    "$loc: $msg"
+                }
+                else -> "An unexpected error occurred"
+            }
+        } catch (e: Exception) {
+            "An unexpected error occurred"
+        }
+    }
+
     private suspend fun saveInventoryToRoom(items: List<InventoryItem>) {
         items.forEach { item ->
             inventoryRepository.saveInventoryItem(
@@ -335,5 +359,179 @@ class OrganizationActivity : AppCompatActivity() {
     private fun updateList() {
         refreshList()                  // update the list
         switchTab(showingInventory)    // update the tab styles
+    }
+
+    companion object {
+        // These match exactly the string values pint generates in your Python backend
+        val UNIT_OPTIONS = listOf(
+            "kilogram",
+            "gram",
+            "pound",
+            "ounce",
+            "metric_ton",
+            "liter",
+            "milliliter",
+            "gallon",
+            "fluid_ounce",
+            "cup"
+        )
+    }
+
+    private fun showNewInventoryDialog() {
+        val dialog = Dialog(this)
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        dialog.setContentView(R.layout.dialog_new_inventory)
+
+        dialog.window?.setLayout(
+            (resources.displayMetrics.widthPixels * 0.9).toInt(),
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+
+        val llErrors        = dialog.findViewById<LinearLayout>(R.id.llInventoryDialogErrors)
+        val etName          = dialog.findViewById<EditText>(R.id.etInventoryName)
+        val etQuantity      = dialog.findViewById<EditText>(R.id.etInventoryQuantity)
+        val spinnerUnit     = dialog.findViewById<Spinner>(R.id.spinnerUnit)
+        val etCost          = dialog.findViewById<EditText>(R.id.etInventoryCost)
+        val btnCancel       = dialog.findViewById<Button>(R.id.btnInventoryDialogCancel)
+        val btnSubmit       = dialog.findViewById<Button>(R.id.btnInventoryDialogSubmit)
+
+        // Populate the unit spinner
+        val spinnerAdapter = ArrayAdapter(
+            this,
+            android.R.layout.simple_spinner_item,
+            UNIT_OPTIONS
+        )
+        spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spinnerUnit.adapter = spinnerAdapter
+
+        btnCancel.setOnClickListener { dialog.dismiss() }
+
+        btnSubmit.setOnClickListener {
+            val name     = etName.text.toString().trim()
+            val quantity = etQuantity.text.toString().trim()
+            val unit     = spinnerUnit.selectedItem.toString()
+            val cost     = etCost.text.toString().trim()
+
+            // Client side validation
+            val errors = mutableListOf<String>()
+            if (name.isEmpty())     errors.add("Item name is required")
+            if (quantity.isEmpty()) errors.add("Quantity is required")
+            if (cost.isEmpty())     errors.add("Cost per unit is required")
+
+            if (errors.isNotEmpty()) {
+                showDialogErrors(llErrors, errors)
+                return@setOnClickListener
+            }
+
+            btnSubmit.isEnabled = false
+
+            val newItem = NewInventoryRequest(
+                name          = name,
+                quantity      = quantity.toInt(),
+                unit          = unit,
+                cost_per_unit = cost.toInt(),
+                org_id        = orgId
+            )
+
+            lifecycleScope.launch {
+                if (NetworkUtils.isOnline(this@OrganizationActivity)) {
+                    // Online — save to backend first, then Room
+                    try {
+                        val response = withContext(Dispatchers.IO) {
+                            ApiClient.apiService.createInventoryItem(newItem)
+                        }
+
+                        if (response.isSuccessful) {
+                            val createdItem = response.body()!!
+
+                            // Save to Room with server-assigned id
+                            withContext(Dispatchers.IO) {
+                                inventoryRepository.saveInventoryItem(
+                                    InventoryEntity(
+                                        id           = createdItem.id,
+                                        itemName     = createdItem.item_name,
+                                        itemQuantity = createdItem.item_quantity,
+                                        unit         = createdItem.unit,
+                                        costPerUnit  = createdItem.cost_per_unit,
+                                        orgId        = orgId,
+                                        isSynced     = true
+                                    )
+                                )
+                            }
+
+                            // Add to the in-memory list and refresh UI
+                            val updatedList = inventoryItems.toMutableList()
+                            updatedList.add(
+                                InventoryItem(
+                                    id            = createdItem.id,
+                                    item_name     = createdItem.item_name,
+                                    item_quantity = createdItem.item_quantity,
+                                    unit          = createdItem.unit,
+                                    cost_per_unit = createdItem.cost_per_unit
+                                )
+                            )
+                            inventoryItems = updatedList
+                            refreshList()
+                            dialog.dismiss()
+
+                        } else {
+                            val errorBody = response.errorBody()?.string()
+                            showDialogErrors(llErrors, listOf(parseErrorMessage(errorBody)))
+                        }
+
+                    } catch (e: Exception) {
+                        showDialogErrors(llErrors, listOf("Network error: ${e.message}"))
+                    }
+
+                } else {
+                    // Offline — save to Room only with a temporary negative id
+                    // Negative ids signal unsynced local records
+                    val tempId = -(System.currentTimeMillis().toInt())
+
+                    withContext(Dispatchers.IO) {
+                        inventoryRepository.saveInventoryItem(
+                            InventoryEntity(
+                                id           = tempId,
+                                itemName     = name,
+                                itemQuantity = quantity.toInt(),
+                                unit         = unit,
+                                costPerUnit  = cost.toInt(),
+                                orgId        = orgId,
+                                isSynced     = false    // will be synced when online
+                            )
+                        )
+                    }
+
+                    // Add to in-memory list and refresh UI
+                    val updatedList = inventoryItems.toMutableList()
+                    updatedList.add(
+                        InventoryItem(
+                            id            = tempId,
+                            item_name     = name,
+                            item_quantity = quantity.toInt(),
+                            unit          = unit,
+                            cost_per_unit = cost.toInt()
+                        )
+                    )
+                    inventoryItems = updatedList
+                    refreshList()
+                    dialog.dismiss()
+                }
+
+                btnSubmit.isEnabled = true
+            }
+        }
+
+        dialog.show()
+    }
+
+    private fun showDialogErrors(container: LinearLayout, errors: List<String>) {
+        container.removeAllViews()
+        errors.forEach { message ->
+            val errorView = layoutInflater.inflate(R.layout.item_error, container, false)
+            errorView.findViewById<TextView>(R.id.tvError).text = message
+            container.addView(errorView)
+        }
+        container.visibility = View.VISIBLE
     }
 }

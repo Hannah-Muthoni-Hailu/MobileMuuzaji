@@ -5,6 +5,8 @@ import com.mobilemuuzaji.app.network.models.LoginRequest
 import com.mobilemuuzaji.app.network.models.SignupRequest
 import com.mobilemuuzaji.app.network.models.NewOrgRequest
 import com.mobilemuuzaji.app.network.models.OrganizationDetailsResponse
+import com.mobilemuuzaji.app.network.models.NewInventoryRequest
+import com.mobilemuuzaji.app.network.models.InventoryItemResponse
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.POST
@@ -24,4 +26,7 @@ interface ApiService {
 
     @GET("organization/{org_id}")
     suspend fun getOrganization(@Path("org_id") orgId: Int): Response<OrganizationDetailsResponse>
+
+    @POST("new-product")
+    suspend fun createInventoryItem(@Body request: NewInventoryRequest): Response<InventoryItemResponse>
 }
