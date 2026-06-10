@@ -12,6 +12,7 @@ import com.mobilemuuzaji.app.database.entities.SalesEntity
 import com.mobilemuuzaji.app.network.ApiClient
 import com.mobilemuuzaji.app.network.models.InventoryItem
 import com.mobilemuuzaji.app.network.models.SalesItem
+import com.mobilemuuzaji.app.network.models.UpdateInventoryRequest
 import com.mobilemuuzaji.app.repository.InventoryRepository
 import com.mobilemuuzaji.app.repository.SalesRepository
 import kotlinx.coroutines.Dispatchers
@@ -346,7 +347,13 @@ class OrganizationActivity : AppCompatActivity() {
         etSearch.text.clear()
         
         if (showingInventory) {
-            lvItems.adapter         = InventoryAdapter(this, inventoryItems)
+            lvItems.adapter = InventoryAdapter(
+                context  = this,
+                allItems = inventoryItems,
+                onEditClick = { item, position ->
+                    showEditInventoryDialog(item, position)
+                }
+            )
             tvEmptyState.text       = "No inventory items"
             tvEmptyState.visibility = if (inventoryItems.isEmpty()) View.VISIBLE else View.GONE
         } else {
@@ -533,5 +540,175 @@ class OrganizationActivity : AppCompatActivity() {
             container.addView(errorView)
         }
         container.visibility = View.VISIBLE
+    }
+
+    private fun showEditInventoryDialog(item: InventoryItem, position: Int) {
+        val dialog = Dialog(this)
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        dialog.setContentView(R.layout.dialog_edit_inventory)
+
+        dialog.window?.setLayout(
+            (resources.displayMetrics.widthPixels * 0.9).toInt(),
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+
+        val llErrors    = dialog.findViewById<LinearLayout>(R.id.llEditInventoryDialogErrors)
+        val etName      = dialog.findViewById<EditText>(R.id.etEditInventoryName)
+        val etQuantity  = dialog.findViewById<EditText>(R.id.etEditInventoryQuantity)
+        val spinnerUnit = dialog.findViewById<Spinner>(R.id.spinnerEditUnit)
+        val etCost      = dialog.findViewById<EditText>(R.id.etEditInventoryCost)
+        val btnCancel   = dialog.findViewById<Button>(R.id.btnEditInventoryDialogCancel)
+        val btnSubmit   = dialog.findViewById<Button>(R.id.btnEditInventoryDialogSubmit)
+
+        // Populate the unit spinner
+        val spinnerAdapter = ArrayAdapter(
+            this,
+            android.R.layout.simple_spinner_item,
+            UNIT_OPTIONS
+        )
+        spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spinnerUnit.adapter = spinnerAdapter
+
+        // Pre-populate fields with existing item data
+        etName.setText(item.item_name)
+        etQuantity.setText(item.item_quantity.toString())
+        etCost.setText(item.cost_per_unit.toString())
+
+        // Pre-select the current unit in the spinner
+        val unitIndex = UNIT_OPTIONS.indexOf(item.unit)
+        if (unitIndex >= 0) spinnerUnit.setSelection(unitIndex)
+
+        btnCancel.setOnClickListener { dialog.dismiss() }
+
+        btnSubmit.setOnClickListener {
+            val name     = etName.text.toString().trim()
+            val quantity = etQuantity.text.toString().trim()
+            val unit     = spinnerUnit.selectedItem.toString()
+            val cost     = etCost.text.toString().trim()
+
+            // Validation
+            val errors = mutableListOf<String>()
+            if (name.isEmpty())     errors.add("Item name is required")
+            if (quantity.isEmpty()) errors.add("Quantity is required")
+            if (cost.isEmpty())     errors.add("Cost per unit is required")
+
+            if (errors.isNotEmpty()) {
+                showDialogErrors(llErrors, errors)
+                return@setOnClickListener
+            }
+
+            btnSubmit.isEnabled = false
+
+            lifecycleScope.launch {
+                if (NetworkUtils.isOnline(this@OrganizationActivity)) {
+                    // Online — update backend first then Room
+                    try {
+                        val response = withContext(Dispatchers.IO) {
+                            ApiClient.apiService.updateInventoryItem(
+                                itemId  = item.id,
+                                request = UpdateInventoryRequest(
+                                    item_name     = name,
+                                    item_quantity = quantity.toInt(),
+                                    unit          = unit,
+                                    cost_per_unit = cost.toInt(),
+                                    org_id        = orgId
+                                )
+                            )
+                        }
+
+                        if (response.isSuccessful) {
+                            val updatedItem = response.body()!!
+
+                            // Update Room
+                            withContext(Dispatchers.IO) {
+                                inventoryRepository.updateInventoryItem(
+                                    InventoryEntity(
+                                        id           = updatedItem.id,
+                                        itemName     = updatedItem.item_name,
+                                        itemQuantity = updatedItem.item_quantity,
+                                        unit         = updatedItem.unit,
+                                        costPerUnit  = updatedItem.cost_per_unit,
+                                        orgId        = orgId,
+                                        isSynced     = true
+                                    )
+                                )
+                            }
+
+                            // Update in-memory list
+                            updateInventoryItemInList(
+                                position = position,
+                                id            = updatedItem.id,
+                                item_name     = updatedItem.item_name,
+                                item_quantity = updatedItem.item_quantity,
+                                unit          = updatedItem.unit,
+                                cost_per_unit = updatedItem.cost_per_unit
+                            )
+
+                            dialog.dismiss()
+
+                        } else {
+                            val errorBody = response.errorBody()?.string()
+                            showDialogErrors(llErrors, listOf(parseErrorMessage(errorBody)))
+                        }
+
+                    } catch (e: Exception) {
+                        showDialogErrors(llErrors, listOf("Network error: ${e.message}"))
+                    }
+
+                } else {
+                    // Offline — update Room only, mark as unsynced
+                    withContext(Dispatchers.IO) {
+                        inventoryRepository.updateInventoryItem(
+                            InventoryEntity(
+                                id           = item.id,
+                                itemName     = name,
+                                itemQuantity = quantity.toInt(),
+                                unit         = unit,
+                                costPerUnit  = cost.toInt(),
+                                orgId        = orgId,
+                                isSynced     = false    // will sync when online
+                            )
+                        )
+                    }
+
+                    // Update in-memory list
+                    updateInventoryItemInList(
+                        position      = position,
+                        id            = item.id,
+                        item_name     = name,
+                        item_quantity = quantity.toInt(),
+                        unit          = unit,
+                        cost_per_unit = cost.toInt()
+                    )
+
+                    dialog.dismiss()
+                }
+
+                btnSubmit.isEnabled = true
+            }
+        }
+
+        dialog.show()
+    }
+
+    // Helper to update a single item in the in-memory list and refresh the UI
+    private fun updateInventoryItemInList(
+        position:      Int,
+        id:            Int,
+        item_name:     String,
+        item_quantity: Int,
+        unit:          String,
+        cost_per_unit: Int
+    ) {
+        val updatedList = inventoryItems.toMutableList()
+        updatedList[position] = InventoryItem(
+            id            = id,
+            item_name     = item_name,
+            item_quantity = item_quantity,
+            unit          = unit,
+            cost_per_unit = cost_per_unit
+        )
+        inventoryItems = updatedList
+        refreshList()
     }
 }

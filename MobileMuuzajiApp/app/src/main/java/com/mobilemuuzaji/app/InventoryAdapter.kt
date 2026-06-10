@@ -13,7 +13,8 @@ import com.mobilemuuzaji.app.network.models.InventoryItem
 
 class InventoryAdapter(
     context: Context,
-    private val allItems: List<InventoryItem>
+    private val allItems: List<InventoryItem>,
+    private val onEditClick: (InventoryItem, Int) -> Unit
 ) : ArrayAdapter<InventoryItem>(context, 0, allItems.toMutableList()), Filterable {
 
     // Allow for filtering for search
@@ -33,12 +34,11 @@ class InventoryAdapter(
         view.findViewById<TextView>(R.id.tvItemQuantity).text = "Qty: ${item.item_quantity} ${item.unit}"
         view.findViewById<TextView>(R.id.tvItemCost).text     = "Cost: ${item.cost_per_unit} per unit"
 
-        // Dummy buttons — functionality added later
         view.findViewById<Button>(R.id.btnSell).setOnClickListener {
             // TODO: implement sell
         }
         view.findViewById<Button>(R.id.btnEdit).setOnClickListener {
-            // TODO: implement edit
+            onEditClick(item, position)
         }
 
         return view

@@ -85,6 +85,14 @@ data class InventoryItemResponse(
     val org_id:        Int
 )
 
+data class UpdateInventoryRequest(
+    val item_name:     String,
+    val item_quantity: Int,
+    val unit:          String,
+    val cost_per_unit: Int,
+    val org_id:        Int
+)
+
 // Returned when validation fails
 data class ErrorResponse(
     val detail: Any?  = null,   // Pydantic validation errors

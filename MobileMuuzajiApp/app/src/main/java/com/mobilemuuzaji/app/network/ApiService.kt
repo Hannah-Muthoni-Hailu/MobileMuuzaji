@@ -7,9 +7,11 @@ import com.mobilemuuzaji.app.network.models.NewOrgRequest
 import com.mobilemuuzaji.app.network.models.OrganizationDetailsResponse
 import com.mobilemuuzaji.app.network.models.NewInventoryRequest
 import com.mobilemuuzaji.app.network.models.InventoryItemResponse
+import com.mobilemuuzaji.app.network.models.UpdateInventoryRequest
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Path
 import retrofit2.http.GET
 
@@ -29,4 +31,10 @@ interface ApiService {
 
     @POST("new-product")
     suspend fun createInventoryItem(@Body request: NewInventoryRequest): Response<InventoryItemResponse>
+
+    @PUT("update-product/{item_id}")
+    suspend fun updateInventoryItem(
+        @Path("item_id") itemId: Int,
+        @Body request: UpdateInventoryRequest
+    ): Response<InventoryItemResponse>
 }
