@@ -256,12 +256,8 @@ def newProduct(product: InventoryItem, db: Session = Depends(get_db)):
         db.add(inventory_item)
         db.commit()
         db.refresh(inventory_item)
-        
-        organization = db.query(Organization).filter(Organization.id == product.org_id).first()
-        inventory = organization.inv_items
-        sales = organization.sales_items
 
-        return {"Message": f"{inventory_item.item_name} added to inventory", "organization": organization}
+        return {"Message": f"{inventory_item.item_name} added to inventory", "item": inventory_item}
     except Exception as e:
         logger.error(f"Database/Server failure: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal Server error")
