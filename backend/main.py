@@ -136,7 +136,7 @@ def signup(user: UserModel, db: Session = Depends(get_db)):
         db.commit()
         db.refresh(db_user)
         
-        user = {
+        user_item = {
             "id": db_user.id,
             "name": db_user.name,
             "email": db_user.email,
@@ -144,7 +144,7 @@ def signup(user: UserModel, db: Session = Depends(get_db)):
             "employee_orgs": db_user.employement_status
         }
 
-        return {"message": f"User {db_user.name} created", "user": user}
+        return {"message": f"User {db_user.name} created", "user": user_item}
     else:
         raise HTTPException(status_code=401, detail="User already exists. Please log in instead")
 
@@ -159,7 +159,7 @@ def login(user: LoginModel, db: Session = Depends(get_db)):
     if not db_user or not verify_password(user.password, db_user.password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    user = {
+    user_item = {
             "id": db_user.id,
             "name": db_user.name,
             "email": db_user.email,
@@ -167,7 +167,7 @@ def login(user: LoginModel, db: Session = Depends(get_db)):
             "employee_orgs": db_user.employement_status
         }
 
-    return {"message": f"User {db_user.name} logged in", "user": user}
+    return {"message": f"User {db_user.name} logged in", "user": user_item}
 
 @app.post("/new-org")
 def newOrg(org: NewOrgModel, db: Session =  Depends(get_db)):
