@@ -55,4 +55,11 @@ dependencies {
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
     androidTestImplementation("androidx.room:room-testing:2.6.1")
     testImplementation("junit:junit:4.13.2")
+
+    // Retrofit for API calls
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+
+    // OkHttp for logging network requests during development
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 }

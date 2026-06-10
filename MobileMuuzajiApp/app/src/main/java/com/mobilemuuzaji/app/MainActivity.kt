@@ -62,7 +62,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun navigateToOnboarding() {
-        val intent = Intent(this, OnboardingActivity::class.java)
+        val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
+        val onboardingComplete = prefs.getBoolean("onboarding_complete", false)
+
+        val intent = if (onboardingComplete) {
+            Intent(this, AuthActivity::class.java)
+        } else {
+            Intent(this, OnboardingActivity::class.java)
+        }
+
         startActivity(intent)
         finish()
     }

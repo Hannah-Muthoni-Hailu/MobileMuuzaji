@@ -1,5 +1,6 @@
 package com.mobilemuuzaji.app.database.entities
 
+import androidx.room.Index
 import androidx.room.Entity
 import androidx.room.ForeignKey
 
@@ -19,7 +20,8 @@ import androidx.room.ForeignKey
             childColumns = ["organizationId"],
             onDelete = ForeignKey.CASCADE
         )
-    ]
+    ],
+    indices = [Index(value = ["organizationId"])]
 )
 data class OrganizationEmployeeCrossRef(
     val employeeId: Int,

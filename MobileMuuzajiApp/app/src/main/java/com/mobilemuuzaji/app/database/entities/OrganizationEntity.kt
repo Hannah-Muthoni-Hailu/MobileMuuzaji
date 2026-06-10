@@ -1,5 +1,6 @@
 package com.mobilemuuzaji.app.database.entities
 
+import androidx.room.Index
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.PrimaryKey
@@ -11,7 +12,8 @@ import androidx.room.PrimaryKey
         parentColumns = ["id"],
         childColumns = ["adminId"],
         onDelete = ForeignKey.CASCADE
-    )]
+    )],
+    indices = [Index(value = ["adminId"])]
 )
 data class OrganizationEntity(
     @PrimaryKey val id: Int,

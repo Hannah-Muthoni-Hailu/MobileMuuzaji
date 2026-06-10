@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:paddingTop="?attr/actionBarSize"
+    android:background="#FFFFFF">
+
+    <!-- Top bar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="16dp"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="My Organizations"
+            android:textSize="22sp"
+            android:textStyle="bold"/>
+
+        <Button
+            android:id="@+id/btnNewOrg"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="+ New"/>
+
+    </LinearLayout>
+
+    <!-- Success message — hidden until an org is created -->
+    <TextView
+        android:id="@+id/tvSuccessMessage"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#E8F5E9"
+        android:textColor="#2E7D32"
+        android:padding="12dp"
+        android:textSize="14sp"
+        android:visibility="gone"/>
+
+    <!-- Empty state message -->
+    <TextView
+        android:id="@+id/tvEmptyState"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="64dp"
+        android:text="No organizations to show"
+        android:textSize="16sp"
+        android:textColor="#888888"
+        android:visibility="gone"/>
+
+    <!-- Organization list -->
+    <ListView
+        android:id="@+id/lvOrganizations"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:divider="#EEEEEE"
+        android:dividerHeight="1dp"/>
+
+</LinearLayout>

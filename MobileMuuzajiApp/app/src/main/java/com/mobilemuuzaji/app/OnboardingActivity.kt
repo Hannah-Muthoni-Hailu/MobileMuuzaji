@@ -79,9 +79,11 @@ class OnboardingActivity : AppCompatActivity() {
     }
 
     private fun navigateToSignup() {
-        // SignupActivity doesn't exist yet — we will create it next
-        // val intent = Intent(this, SignupActivity::class.java)
-        // startActivity(intent)
-        // finish()
+        val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
+        prefs.edit().putBoolean("onboarding_complete", true).apply()
+
+        val intent = Intent(this, AuthActivity::class.java)
+        startActivity(intent)
+        finish()
     }
 }

@@ -18,5 +18,25 @@
         <activity
             android:name=".OnboardingActivity"
             android:exported="false"/>
+
+        <activity
+            android:name=".AuthActivity"
+            android:exported="false"/>
+
+        <activity
+            android:name=".DashboardActivity"
+            android:exported="false"/>
+
+        <activity
+            android:name=".CreateOrganizationActivity"
+            android:exported="false"/>
+        
+        <activity
+            android:name=".OrganizationsActivity"
+            android:exported="false"/>
+
+        <activity
+            android:name=".OrganizationActivity"
+            android:exported="false"/>
     </application>
 </manifest>

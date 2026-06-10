@@ -1,5 +1,6 @@
 package com.mobilemuuzaji.app.database.entities
 
+import androidx.room.Index
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.PrimaryKey
@@ -11,7 +12,8 @@ import androidx.room.PrimaryKey
         parentColumns = ["id"],
         childColumns = ["orgId"],
         onDelete = ForeignKey.CASCADE
-    )]
+    )],
+    indices = [Index(value = ["orgId"])]
 )
 data class SalesEntity(
     @PrimaryKey val id: Int,
