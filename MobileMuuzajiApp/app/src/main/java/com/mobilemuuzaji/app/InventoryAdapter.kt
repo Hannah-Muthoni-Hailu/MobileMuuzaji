@@ -6,19 +6,28 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.Button
+import android.widget.Filter
+import android.widget.Filterable
 import android.widget.TextView
 import com.mobilemuuzaji.app.network.models.InventoryItem
 
 class InventoryAdapter(
     context: Context,
-    private val items: List<InventoryItem>
-) : ArrayAdapter<InventoryItem>(context, 0, items) {
+    private val allItems: List<InventoryItem>
+) : ArrayAdapter<InventoryItem>(context, 0, allItems.toMutableList()), Filterable {
+
+    // Allow for filtering for search
+    private var filteredItems: List<InventoryItem> = allItems.toList()
+
+    override fun getCount() = filteredItems.size
+
+    override fun getItem(position: Int) = filteredItems[position]
 
     override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
         val view = convertView ?: LayoutInflater.from(context)
             .inflate(R.layout.item_inventory, parent, false)
 
-        val item = items[position]
+        val item = allItems[position]
 
         view.findViewById<TextView>(R.id.tvItemName).text     = item.item_name
         view.findViewById<TextView>(R.id.tvItemQuantity).text = "Qty: ${item.item_quantity} ${item.unit}"
@@ -33,5 +42,34 @@ class InventoryAdapter(
         }
 
         return view
+    }
+
+    override fun getFilter(): Filter {
+        return object : Filter() {
+
+            // Runs on a background thread — does the actual filtering
+            override fun performFiltering(constraint: CharSequence?): FilterResults {
+                val results = FilterResults()
+
+                results.values = if (constraint.isNullOrBlank()) {
+                    // No query — return everything
+                    allItems.toList()
+                } else {
+                    val query = constraint.toString().lowercase().trim()
+                    allItems.filter { item ->
+                        item.item_name.lowercase().contains(query)
+                    }
+                }
+
+                return results
+            }
+
+            // Runs on the main thread — updates the displayed list
+            @Suppress("UNCHECKED_CAST")
+            override fun publishResults(constraint: CharSequence?, results: FilterResults?) {
+                filteredItems = results?.values as? List<InventoryItem> ?: emptyList()
+                notifyDataSetChanged()
+            }
+        }
     }
 }

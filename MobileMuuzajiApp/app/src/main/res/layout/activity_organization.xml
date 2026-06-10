@@ -36,12 +36,58 @@
 
         </LinearLayout>
 
+        <!-- Search icon -->
+        <ImageButton
+            android:id="@+id/btnSearch"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@android:drawable/ic_menu_search"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:layout_marginEnd="8dp"
+            android:contentDescription="Search"/>
+
         <Button
             android:id="@+id/btnNewInventory"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="New Inventory"
             android:textSize="12sp"/>
+
+    </LinearLayout>
+
+    <!-- Search bar — hidden until search icon is tapped -->
+    <LinearLayout
+        android:id="@+id/llSearchBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="8dp"
+        android:gravity="center_vertical"
+        android:visibility="gone">
+
+        <EditText
+            android:id="@+id/etSearch"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="Search by item name..."
+            android:inputType="text"
+            android:maxLines="1"
+            android:imeOptions="actionSearch"
+            android:background="@android:drawable/edit_text"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"/>
+
+        <!-- Clear button -->
+        <ImageButton
+            android:id="@+id/btnClearSearch"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@android:drawable/ic_menu_close_clear_cancel"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Clear search"/>
 
     </LinearLayout>
 

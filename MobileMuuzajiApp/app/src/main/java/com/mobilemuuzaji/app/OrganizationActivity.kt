@@ -23,6 +23,11 @@ import com.mobilemuuzaji.app.database.entities.OrganizationEntity
 import com.mobilemuuzaji.app.network.models.OrganizationDetails
 import com.mobilemuuzaji.app.repository.OrganizationRepository
 import com.mobilemuuzaji.app.repository.UserRepository
+import android.widget.EditText
+import android.widget.ImageButton
+import android.text.Editable
+import android.text.TextWatcher
+import android.view.inputmethod.InputMethodManager
 
 class OrganizationActivity : AppCompatActivity() {
 
@@ -36,6 +41,11 @@ class OrganizationActivity : AppCompatActivity() {
     private lateinit var tabIndicator:   View
     private lateinit var tvEmptyState:   TextView
     private lateinit var lvItems:        ListView
+    private lateinit var btnSearch:     ImageButton
+    private lateinit var llSearchBar:   LinearLayout
+    private lateinit var etSearch:      EditText
+    private lateinit var btnClearSearch:ImageButton
+    private var isSearchVisible = false
 
     private lateinit var inventoryRepository: InventoryRepository
     private lateinit var salesRepository:     SalesRepository
@@ -71,6 +81,10 @@ class OrganizationActivity : AppCompatActivity() {
         tabIndicator    = findViewById(R.id.tabIndicator)
         tvEmptyState    = findViewById(R.id.tvEmptyState)
         lvItems         = findViewById(R.id.lvItems)
+        btnSearch      = findViewById(R.id.btnSearch)
+        llSearchBar    = findViewById(R.id.llSearchBar)
+        etSearch       = findViewById(R.id.etSearch)
+        btnClearSearch = findViewById(R.id.btnClearSearch)
 
         tvOrgName.text = orgName
 
@@ -88,6 +102,50 @@ class OrganizationActivity : AppCompatActivity() {
         btnNewInventory.setOnClickListener {
             // TODO: implement new inventory
         }
+
+        // Toggle search bar visibility when search icon is tapped
+        btnSearch.setOnClickListener {
+            isSearchVisible = !isSearchVisible
+            if (isSearchVisible) {
+                llSearchBar.visibility = View.VISIBLE
+                etSearch.requestFocus()
+                // Show keyboard automatically
+                val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+                imm.showSoftInput(etSearch, InputMethodManager.SHOW_IMPLICIT)
+            } else {
+                llSearchBar.visibility = View.GONE
+                etSearch.text.clear()
+                refreshList()   // reset to full list
+                // Hide keyboard
+                val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+                imm.hideSoftInputFromWindow(etSearch.windowToken, 0)
+            }
+        }
+
+        // Clear button wipes the search and resets the list
+        btnClearSearch.setOnClickListener {
+            etSearch.text.clear()
+            llSearchBar.visibility = View.GONE
+            isSearchVisible = false
+            val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+            imm.hideSoftInputFromWindow(etSearch.windowToken, 0)
+            refreshList()
+        }
+
+        // Filter as the user types
+        etSearch.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+
+            override fun afterTextChanged(s: Editable?) {
+                val query = s.toString()
+                // Get the current adapter and call filter on it
+                when (val adapter = lvItems.adapter) {
+                    is InventoryAdapter -> adapter.filter.filter(query)
+                    is SalesAdapter     -> adapter.filter.filter(query)
+                }
+            }
+        })
 
         // Load from local Room database first
         loadFromLocal()
@@ -260,6 +318,9 @@ class OrganizationActivity : AppCompatActivity() {
     }
 
     private fun refreshList() {
+        // Clear search when switching tabs
+        etSearch.text.clear()
+        
         if (showingInventory) {
             lvItems.adapter         = InventoryAdapter(this, inventoryItems)
             tvEmptyState.text       = "No inventory items"
