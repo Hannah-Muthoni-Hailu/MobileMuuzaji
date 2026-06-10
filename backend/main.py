@@ -361,7 +361,7 @@ def sale(saleitem: SaleModel, db: Session = Depends(get_db)):
         inventory = organization.inv_items
         sales = organization.sales_items
 
-        return {"message": "Successful sale made", "organization": organization}
+        return sale_entry
     except Exception as e:
         logger.error(f"Database/Server failure: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal Server error")
