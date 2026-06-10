@@ -171,7 +171,6 @@ def login(user: LoginModel, db: Session = Depends(get_db)):
 
 @app.post("/new-org")
 def newOrg(org: NewOrgModel, db: Session =  Depends(get_db)):
-    # Implement session management for sending the admin_id (frontend stuff)
     try:
         db_org = Organization(
             org_name=org.org_name,
@@ -182,7 +181,17 @@ def newOrg(org: NewOrgModel, db: Session =  Depends(get_db)):
         db.commit()
         db.refresh(db_org)
 
-        return {"message": f"New organization {db_org.org_name} created", "organization": db_org}
+        db_user = db.query(User).filter(User.id == org.admin_id).first()
+
+        user_item = {
+            "id": db_user.id,
+            "name": db_user.name,
+            "email": db_user.email,
+            "admin_orgs": db_user.admin_status,
+            "employee_orgs": db_user.employement_status
+        }
+
+        return {"message": f"New organization {db_org.org_name} created", "user": user_item}
     except Exception as e:
         logger.error(f"Database/Server failure: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal Server error")
