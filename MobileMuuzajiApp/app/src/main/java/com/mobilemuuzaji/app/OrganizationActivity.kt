@@ -40,7 +40,7 @@ class OrganizationActivity : AppCompatActivity() {
     private lateinit var inventoryRepository: InventoryRepository
     private lateinit var salesRepository:     SalesRepository
     private lateinit var organizationRepository: OrganizationRepository
-    private lateinit var db: AppDatabase
+    private val db by lazy { AppDatabase.getInstance(applicationContext) }
 
     private var orgId   = -1
     private var orgName = ""
