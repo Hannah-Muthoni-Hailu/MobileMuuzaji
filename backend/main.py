@@ -110,8 +110,8 @@ class EditInventoryItem(BaseModel):
     org_id: int
 
 class UpdateInventoryRequest(BaseModel):
-    name: str
-    quantity: int
+    item_name: str
+    item_quantity: int
     unit: Units
     cost_per_unit: int
     org_id: int
