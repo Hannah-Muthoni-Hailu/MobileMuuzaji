@@ -119,31 +119,32 @@ def root():
 
 @app.post("/signup")
 def signup(user: UserModel, db: Session = Depends(get_db)):
-    db_user = db.query(User).filter(User.email == user.email).first()
+    try:
+        db_user = db.query(User).filter(User.email == user.email).first()
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
     if not db_user:
-        db_user = User(name=user.name, email=user.email, password=hash_password(user.password))
+        try:
+            db_user = User(name=user.name, email=user.email, password=hash_password(user.password))
+        except Exception as e:
+            print(e)
+            raise HTTPException(status_code=500, detail="Internal server error")
+
         db.add(db_user)
         db.commit()
         db.refresh(db_user)
+        
+        user = {
+            "id": db_user.id,
+            "name": db_user.name,
+            "email": db_user.email,
+            "admin_orgs": db_user.admin_status,
+            "employee_orgs": db_user.employement_status
+        }
 
-        # Collect and return inventory details to the user dashboard
-        # Extract user's organization and inventory for display
-        if db_user.admin_status:
-            user_organization = db_user.admin_status[0]
-        elif db_user.employement_status:
-            user_organization = db_user.employement_status[0]
-        else:
-            user_organization = {}
-
-        if user_organization != {}:
-            org_inventory = user_organization.inv_items
-            org_sales = user_organization.sales_items
-        else:
-            org_inventory = {}
-            org_sales = {}
-
-        return {"message": f"User {db_user.name} created", "user": user_organization}
+        return {"message": f"User {db_user.name} created", "user": user}
     else:
         raise HTTPException(status_code=401, detail="User already exists. Please log in instead")
 
@@ -157,23 +158,16 @@ def login(user: LoginModel, db: Session = Depends(get_db)):
 
     if not db_user or not verify_password(user.password, db_user.password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    
-    # Extract user's organization and inventory for display
-    if db_user.admin_status:
-        user_organization = db_user.admin_status[0]
-    elif db_user.employement_status:
-        user_organization = db_user.employement_status[0]
-    else:
-        user_organization = {}
 
-    if user_organization != {}:
-        org_inventory = user_organization.inv_items
-        org_sales = user_organization.sales_items
-    else:
-        org_inventory = {}
-        org_sales = {}
+    user = {
+            "id": db_user.id,
+            "name": db_user.name,
+            "email": db_user.email,
+            "admin_orgs": db_user.admin_status,
+            "employee_orgs": db_user.employement_status
+        }
 
-    return {"message": f"User {db_user.name} logged in", "user_org": user_organization}
+    return {"message": f"User {db_user.name} logged in", "user": user}
 
 @app.post("/new-org")
 def newOrg(org: NewOrgModel, db: Session =  Depends(get_db)):
