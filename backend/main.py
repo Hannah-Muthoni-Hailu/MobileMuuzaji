@@ -257,7 +257,16 @@ def newProduct(product: InventoryItem, db: Session = Depends(get_db)):
         db.commit()
         db.refresh(inventory_item)
 
-        return { "item": inventory_item}
+        item_result = {
+            "id": inventory_item.id,
+            "item_name": inventory_item.item_name,
+            "item_quantity": inventory_item.item_quantity,
+            "unit": inventory_item.unit,
+            "cost_per_unit": inventory_item.cost_per_unit,
+            "org_id": inventory_item.org_id
+        }
+
+        return { item_result }
     except Exception as e:
         logger.error(f"Database/Server failure: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal Server error")
