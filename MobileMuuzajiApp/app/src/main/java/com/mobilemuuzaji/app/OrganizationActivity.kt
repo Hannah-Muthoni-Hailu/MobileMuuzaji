@@ -89,10 +89,10 @@ class OrganizationActivity : AppCompatActivity() {
             // TODO: implement new inventory
         }
 
-        // Step 1 — load from local Room database first
+        // Load from local Room database first
         loadFromLocal()
 
-        // Step 2 — if online, fetch fresh data from API and update Room
+        // If online, fetch fresh data from API and update Room
         if (NetworkUtils.isOnline(this)) {
             fetchFromApi()
         }

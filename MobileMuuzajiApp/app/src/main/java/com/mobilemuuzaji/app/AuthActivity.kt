@@ -14,6 +14,17 @@ import com.mobilemuuzaji.app.network.models.ErrorResponse
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import android.util.Log
+import com.mobilemuuzaji.app.database.AppDatabase
+import com.mobilemuuzaji.app.database.entities.InventoryEntity
+import com.mobilemuuzaji.app.database.entities.OrganizationEntity
+import com.mobilemuuzaji.app.database.entities.SalesEntity
+import com.mobilemuuzaji.app.database.entities.UserEntity
+import com.mobilemuuzaji.app.network.models.AuthResponse
+import com.mobilemuuzaji.app.repository.InventoryRepository
+import com.mobilemuuzaji.app.repository.OrganizationRepository
+import com.mobilemuuzaji.app.repository.SalesRepository
+import com.mobilemuuzaji.app.repository.UserRepository
 
 class AuthActivity : AppCompatActivity() {
 
@@ -95,6 +106,116 @@ class AuthActivity : AppCompatActivity() {
         }
     }
 
+    private suspend fun syncAllDataToRoom(authResponse: AuthResponse) {
+        val db = AppDatabase.getInstance(applicationContext)
+
+        val userRepo         = UserRepository(db.userDao())
+        val orgRepo          = OrganizationRepository(db.organizationDao())
+        val inventoryRepo    = InventoryRepository(db.inventoryDao())
+        val salesRepo        = SalesRepository(db.salesDao())
+
+        // Save the logged in user first
+        userRepo.saveUser(
+            UserEntity(
+                id       = authResponse.user.id,
+                name     = authResponse.user.name,
+                email    = authResponse.user.email,
+                password = "",           // never store plain text password locally
+                isSynced = true
+            )
+        )
+
+        // Collect all organization ids from both admin and employee lists
+        val allOrgIds = (authResponse.user.admin_orgs + authResponse.user.employee_orgs)
+            .map { it.id }
+            .distinct()
+
+        // For each organization, fetch full details and save to Room
+        allOrgIds.forEach { orgId ->
+            try {
+                val response = ApiClient.apiService.getOrganization(orgId)
+
+                if (response.isSuccessful) {
+                    val org = response.body()!!.organization
+
+                    // Save admin user if not already saved
+                    if (userRepo.getUserById(org.admin_id) == null) {
+                        userRepo.saveUser(
+                            UserEntity(
+                                id       = org.admin_id,
+                                name     = org.admin_name,
+                                email    = "",
+                                password = "",
+                                isSynced = true
+                            )
+                        )
+                    }
+
+                    // Save organization
+                    orgRepo.saveOrganization(
+                        OrganizationEntity(
+                            id       = org.id,
+                            orgName  = org.name,
+                            adminId  = org.admin_id,
+                            isSynced = true
+                        )
+                    )
+
+                    // Save employees
+                    org.employees.forEach { employee ->
+                        if (userRepo.getUserById(employee.id) == null) {
+                            userRepo.saveUser(
+                                UserEntity(
+                                    id       = employee.id,
+                                    name     = employee.name,
+                                    email    = employee.email,
+                                    password = "",
+                                    isSynced = true
+                                )
+                            )
+                        }
+                        orgRepo.addEmployee(
+                            employeeId     = employee.id,
+                            organizationId = org.id
+                        )
+                    }
+
+                    // Save inventory
+                    org.inv_items.forEach { item ->
+                        inventoryRepo.saveInventoryItem(
+                            InventoryEntity(
+                                id           = item.id,
+                                itemName     = item.item_name,
+                                itemQuantity = item.item_quantity,
+                                unit         = item.unit,
+                                costPerUnit  = item.cost_per_unit,
+                                orgId        = org.id,
+                                isSynced     = true
+                            )
+                        )
+                    }
+
+                    // Save sales
+                    org.sales_items.forEach { sale ->
+                        salesRepo.saveSale(
+                            SalesEntity(
+                                id           = sale.id,
+                                itemName     = sale.item_name,
+                                itemQuantity = sale.item_quantity,
+                                earnings     = sale.earnings,
+                                orgId        = org.id,
+                                isSynced     = true
+                            )
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                // Log but don't crash — partial sync is better than no sync
+                Log.e("AuthActivity", "Failed to sync org $orgId: ${e.message}")
+            }
+        }
+    }
+
     private fun handleSignup() {
         val name           = etName.text.toString().trim()
         val email          = etEmail.text.toString().trim()
@@ -142,6 +263,14 @@ class AuthActivity : AppCompatActivity() {
                         adminOrgs    = authResponse.user.admin_orgs,
                         employeeOrgs = authResponse.user.employee_orgs
                     )
+                    // Show a syncing indicator
+                    btnSubmit.text    = "Syncing data..."
+                    btnSubmit.isEnabled = false
+
+                    // Sync all org data to Room before navigating
+                    withContext(Dispatchers.IO) {
+                        syncAllDataToRoom(authResponse)
+                    }
                     navigateAfterAuth()
                 } else {
                     // Parse error response from API
@@ -190,6 +319,14 @@ class AuthActivity : AppCompatActivity() {
                         adminOrgs    = authResponse.user.admin_orgs,
                         employeeOrgs = authResponse.user.employee_orgs
                     )
+                    // Show a syncing indicator
+                    btnSubmit.text    = "Syncing data..."
+                    btnSubmit.isEnabled = false
+
+                    // Sync all org data to Room before navigating
+                    withContext(Dispatchers.IO) {
+                        syncAllDataToRoom(authResponse)
+                    }
                     navigateAfterAuth()
                 } else {
                     val errorBody = response.errorBody()?.string()
