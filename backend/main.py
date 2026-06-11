@@ -241,10 +241,9 @@ def newEmployee(employee: EmployeesModel, db: Session = Depends(get_db)):
         db.commit()
         db.refresh(organization)
 
-        inventory = organization.inv_items
-        sales = organization.sales_items
+        employees = organization.employees
 
-        return {"message": "New employee added to your organization.", "organization": organization}
+        return organization
     except Exception as e:
         logger.error(f"Database/Server failure: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal Server error")
