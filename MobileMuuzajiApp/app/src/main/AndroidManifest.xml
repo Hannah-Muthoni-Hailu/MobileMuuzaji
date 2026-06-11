@@ -38,5 +38,9 @@
         <activity
             android:name=".OrganizationActivity"
             android:exported="false"/>
+
+        <activity
+            android:name=".EmployeesActivity"
+            android:exported="false"/>
     </application>
 </manifest>

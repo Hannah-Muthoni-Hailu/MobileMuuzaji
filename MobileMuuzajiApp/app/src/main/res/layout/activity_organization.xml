@@ -229,7 +229,7 @@
 
     </LinearLayout>
 
-    <!-- Side panel — sits on top of main content -->
+    <!-- Side panel — simplified -->
     <LinearLayout
         android:id="@+id/llSidePanel"
         android:layout_width="280dp"
@@ -266,94 +266,35 @@
 
         </LinearLayout>
 
-        <!-- Divider -->
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
             android:background="#00000020"/>
 
-        <!-- Panel tabs -->
-        <LinearLayout
+        <!-- Navigation options -->
+        <TextView
+            android:id="@+id/panelTabInventory"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:padding="8dp">
+            android:text="📦  Inventory &amp; Sales"
+            android:padding="16dp"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:background="?attr/selectableItemBackground"/>
 
-            <TextView
-                android:id="@+id/panelTabInventory"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Inventory"
-                android:gravity="center"
-                android:padding="10dp"
-                android:textSize="13sp"
-                android:textStyle="bold"
-                android:background="#00000015"
-                android:textColor="#000000"/>
-
-            <TextView
-                android:id="@+id/panelTabEmployees"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Employees"
-                android:gravity="center"
-                android:padding="10dp"
-                android:textSize="13sp"
-                android:layout_marginStart="8dp"/>
-
-        </LinearLayout>
-
-        <!-- Divider -->
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
-            android:background="#00000020"
-            android:layout_marginBottom="8dp"/>
+            android:background="#00000020"/>
 
-        <!-- Panel content — inventory info or employee list -->
-        <LinearLayout
-            android:id="@+id/llPanelInventoryContent"
+        <TextView
+            android:id="@+id/panelTabEmployees"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Viewing inventory and sales"
-                android:textSize="14sp"
-                android:textColor="#333333"/>
-
-        </LinearLayout>
-
-        <!-- Employee list content -->
-        <LinearLayout
-            android:id="@+id/llPanelEmployeeContent"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical"
-            android:visibility="gone">
-
-            <Button
-                android:id="@+id/btnNewEmployee"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="New Employee"
-                android:layout_marginStart="16dp"
-                android:layout_marginEnd="16dp"
-                android:layout_marginBottom="8dp"/>
-
-            <ListView
-                android:id="@+id/lvEmployees"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:divider="#00000020"
-                android:dividerHeight="1dp"/>
-
-        </LinearLayout>
+            android:text="👥  Employees"
+            android:padding="16dp"
+            android:textSize="15sp"
+            android:background="?attr/selectableItemBackground"/>
 
     </LinearLayout>
 

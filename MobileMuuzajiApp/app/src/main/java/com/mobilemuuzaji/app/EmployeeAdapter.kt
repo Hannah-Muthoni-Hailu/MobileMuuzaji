@@ -7,13 +7,13 @@ import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.TextView
-import com.mobilemuuzaji.app.network.models.UserData
+import com.mobilemuuzaji.app.network.models.EmployeeData
 
 class EmployeeAdapter(
     context: Context,
-    private val employees: List<UserData>,
-    private val onRemoveClick: (UserData) -> Unit
-) : ArrayAdapter<UserData>(context, 0, employees) {
+    private val employees: List<EmployeeData>,
+    private val onRemoveClick: (EmployeeData) -> Unit
+) : ArrayAdapter<EmployeeData>(context, 0, employees) {
 
     override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
         val view = convertView ?: LayoutInflater.from(context)

@@ -114,6 +114,25 @@ data class GroupedSaleItem(
     val sale_count:     Int
 )
 
+data class NewEmployeeRequest(
+    val org_id:         Int,
+    val employee_email: String
+)
+
+data class EmployeeOrgResponse(
+    val id:         Int,
+    val name:       String,
+    val admin_id:   Int,
+    val admin_name: String,
+    val employees:  List<EmployeeData>
+)
+
+data class EmployeeData(
+    val id:    Int,
+    val name:  String,
+    val email: String
+) : java.io.Serializable
+
 // Returned when validation fails
 data class ErrorResponse(
     val detail: Any?  = null,   // Pydantic validation errors

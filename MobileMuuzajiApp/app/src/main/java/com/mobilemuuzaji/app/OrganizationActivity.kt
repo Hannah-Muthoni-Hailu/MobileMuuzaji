@@ -14,6 +14,7 @@ import com.mobilemuuzaji.app.network.models.InventoryItem
 import com.mobilemuuzaji.app.network.models.SalesItem
 import com.mobilemuuzaji.app.network.models.UpdateInventoryRequest
 import com.mobilemuuzaji.app.network.models.GroupedSaleItem
+import com.mobilemuuzaji.app.network.models.EmployeeData
 import java.util.Calendar
 import android.widget.RadioButton
 import android.widget.RadioGroup
@@ -37,6 +38,7 @@ import android.text.TextWatcher
 import android.view.inputmethod.InputMethodManager
 import android.app.Dialog
 import android.view.Window
+import android.content.Intent
 import com.mobilemuuzaji.app.network.models.NewInventoryRequest
 import com.google.gson.Gson
 import com.mobilemuuzaji.app.network.models.ErrorResponse
@@ -290,6 +292,26 @@ class OrganizationActivity : AppCompatActivity() {
                 isSynced = true
             )
         )
+
+        // Save employees into Room and create junction entries so
+        // local queries (getEmployeesForOrganization) return them.
+        org.employees.forEach { employee ->
+            if (userRepo.getUserById(employee.id) == null) {
+                userRepo.saveUser(
+                    UserEntity(
+                        id       = employee.id,
+                        name     = employee.name,
+                        email    = employee.email,
+                        password = "",
+                        isSynced = true
+                    )
+                )
+            }
+            organizationRepository.addEmployee(
+                employeeId     = employee.id,
+                organizationId = org.id
+            )
+        }
     }
 
     private fun fetchFromApi() {
@@ -1165,16 +1187,10 @@ class OrganizationActivity : AppCompatActivity() {
         tvWelcome               = findViewById(R.id.tvWelcome)
         panelTabInventory       = findViewById(R.id.panelTabInventory)
         panelTabEmployees       = findViewById(R.id.panelTabEmployees)
-        llPanelInventoryContent = findViewById(R.id.llPanelInventoryContent)
-        llPanelEmployeeContent  = findViewById(R.id.llPanelEmployeeContent)
-        btnNewEmployee          = findViewById(R.id.btnNewEmployee)
-        lvEmployees             = findViewById(R.id.lvEmployees)
 
-        // Set welcome message
         val userName = sessionManager.getName() ?: "User"
         tvWelcome.text = "Welcome, $userName"
 
-        // Check if the current user is admin of this org
         isAdminOfOrg = sessionManager.getAdminOrgs().any { it.id == orgId }
 
         // Style employees tab based on admin status
@@ -1186,33 +1202,50 @@ class OrganizationActivity : AppCompatActivity() {
             panelTabEmployees.alpha = 0.5f
         }
 
-        // Open panel
-        btnOpenPanel.setOnClickListener { openPanel() }
-
-        // Close panel
+        btnOpenPanel.setOnClickListener  { openPanel() }
         btnClosePanel.setOnClickListener { closePanel() }
 
-        // Panel tab — inventory
+        // Inventory tab — just close the panel since we're already on that page
         panelTabInventory.setOnClickListener {
-            showPanelTab(showInventory = true)
+            closePanel()
         }
 
-        // Panel tab — employees
+        // Employees tab — navigate to EmployeesActivity
         panelTabEmployees.setOnClickListener {
             if (isAdminOfOrg) {
-                showPanelTab(showInventory = false)
+                closePanel()
+                navigateToEmployees()
             } else {
-                android.widget.Toast.makeText(
+                Toast.makeText(
                     this,
-                    "Only the organization admin can view employees",
-                    android.widget.Toast.LENGTH_SHORT
+                    "Only the organization admin can manage employees",
+                    Toast.LENGTH_SHORT
                 ).show()
             }
         }
+    }
 
-        // Dummy new employee button
-        btnNewEmployee.setOnClickListener {
-            // TODO: implement new employee
+    private fun navigateToEmployees() {
+        // Fetch current employees from Room to pass to EmployeesActivity
+        lifecycleScope.launch {
+            val localEmployees = withContext(Dispatchers.IO) {
+                organizationRepository.getEmployeesForOrganization(orgId)
+            }
+
+            // Convert to EmployeeData
+            val employeeList = ArrayList(localEmployees.map { entity ->
+                EmployeeData(
+                    id    = entity.id,
+                    name  = entity.name,
+                    email = entity.email
+                )
+            })
+
+            val intent = Intent(this@OrganizationActivity, EmployeesActivity::class.java)
+            intent.putExtra("org_id",    orgId)
+            intent.putExtra("org_name",  orgName)
+            intent.putExtra("employees", employeeList)
+            startActivity(intent)
         }
     }
 
@@ -1221,9 +1254,6 @@ class OrganizationActivity : AppCompatActivity() {
         val anim = android.view.animation.AnimationUtils.loadAnimation(this, R.anim.slide_in_left)
         llSidePanel.startAnimation(anim)
         isPanelOpen = true
-
-        // Load employees into panel when opening
-        loadEmployeesIntoPanel()
     }
 
     private fun closePanel() {
@@ -1237,47 +1267,5 @@ class OrganizationActivity : AppCompatActivity() {
         })
         llSidePanel.startAnimation(anim)
         isPanelOpen = false
-    }
-
-    private fun showPanelTab(showInventory: Boolean) {
-        if (showInventory) {
-            llPanelInventoryContent.visibility = View.VISIBLE
-            llPanelEmployeeContent.visibility  = View.GONE
-            panelTabInventory.setTypeface(null, android.graphics.Typeface.BOLD)
-            panelTabEmployees.setTypeface(null, android.graphics.Typeface.NORMAL)
-        } else {
-            llPanelInventoryContent.visibility = View.GONE
-            llPanelEmployeeContent.visibility  = View.VISIBLE
-            panelTabEmployees.setTypeface(null, android.graphics.Typeface.BOLD)
-            panelTabInventory.setTypeface(null, android.graphics.Typeface.NORMAL)
-        }
-    }
-
-    private fun loadEmployeesIntoPanel() {
-        // Load from Room
-        lifecycleScope.launch {
-            val localEmployees = withContext(Dispatchers.IO) {
-                organizationRepository.getEmployeesForOrganization(orgId)
-            }
-
-            // Convert UserEntity to UserData for the adapter
-            employees = localEmployees.map { entity ->
-                UserData(
-                    id                  = entity.id,
-                    name                = entity.name,
-                    email               = entity.email,
-                    admin_orgs        = emptyList(),
-                    employee_orgs  = emptyList()
-                )
-            }
-
-            lvEmployees.adapter = EmployeeAdapter(
-                context    = this@OrganizationActivity,
-                employees  = employees,
-                onRemoveClick = { employee ->
-                    // TODO: implement remove employee
-                }
-            )
-        }
     }
 }

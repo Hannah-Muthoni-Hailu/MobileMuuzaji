@@ -10,6 +10,8 @@ import com.mobilemuuzaji.app.network.models.InventoryItemResponse
 import com.mobilemuuzaji.app.network.models.UpdateInventoryRequest
 import com.mobilemuuzaji.app.network.models.SaleRequest
 import com.mobilemuuzaji.app.network.models.SaleResponse
+import com.mobilemuuzaji.app.network.models.NewEmployeeRequest
+import com.mobilemuuzaji.app.network.models.EmployeeOrgResponse
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.POST
@@ -42,4 +44,7 @@ interface ApiService {
 
     @POST("sale")
     suspend fun makeSale(@Body request: SaleRequest): Response<SaleResponse>
+
+    @POST("new-employee")
+    suspend fun addEmployee(@Body request: NewEmployeeRequest): Response<EmployeeOrgResponse>
 }
