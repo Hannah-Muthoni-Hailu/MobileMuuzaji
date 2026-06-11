@@ -241,9 +241,23 @@ def newEmployee(employee: EmployeesModel, db: Session = Depends(get_db)):
         db.commit()
         db.refresh(organization)
 
-        employees = organization.employees
+        org_result = {
+            "id": organization.id,
+            "name": organization.org_name,
+            "admin_id": organization.admin.id,
+            "admin_name": organization.admin.name,
+            "employees": []
+        }
 
-        return organization
+        for employee in organization.employees:
+            emp_result = {
+                "id": employee.id,
+                "name": employee.name,
+                "email": employee.email
+            }
+            org_result["employees"].append(emp_result)
+
+        return org_result
     except Exception as e:
         logger.error(f"Database/Server failure: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal Server error")
