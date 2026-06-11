@@ -8,6 +8,8 @@ import com.mobilemuuzaji.app.network.models.OrganizationDetailsResponse
 import com.mobilemuuzaji.app.network.models.NewInventoryRequest
 import com.mobilemuuzaji.app.network.models.InventoryItemResponse
 import com.mobilemuuzaji.app.network.models.UpdateInventoryRequest
+import com.mobilemuuzaji.app.network.models.SaleRequest
+import com.mobilemuuzaji.app.network.models.SaleResponse
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.POST
@@ -37,4 +39,7 @@ interface ApiService {
         @Path("item_id") itemId: Int,
         @Body request: UpdateInventoryRequest
     ): Response<InventoryItemResponse>
+
+    @POST("sale")
+    suspend fun makeSale(@Body request: SaleRequest): Response<SaleResponse>
 }

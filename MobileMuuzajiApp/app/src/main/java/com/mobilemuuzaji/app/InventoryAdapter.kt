@@ -14,7 +14,8 @@ import com.mobilemuuzaji.app.network.models.InventoryItem
 class InventoryAdapter(
     context: Context,
     private val allItems: List<InventoryItem>,
-    private val onEditClick: (InventoryItem, Int) -> Unit
+    private val onEditClick: (InventoryItem, Int) -> Unit,
+    private val onSellClick: (InventoryItem, Int) -> Unit
 ) : ArrayAdapter<InventoryItem>(context, 0, allItems.toMutableList()), Filterable {
 
     // Allow for filtering for search
@@ -35,7 +36,7 @@ class InventoryAdapter(
         view.findViewById<TextView>(R.id.tvItemCost).text     = "Cost: ${item.cost_per_unit} per unit"
 
         view.findViewById<Button>(R.id.btnSell).setOnClickListener {
-            // TODO: implement sell
+            onSellClick(item, position)
         }
         view.findViewById<Button>(R.id.btnEdit).setOnClickListener {
             onEditClick(item, position)

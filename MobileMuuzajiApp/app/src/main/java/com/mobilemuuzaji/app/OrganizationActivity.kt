@@ -13,6 +13,10 @@ import com.mobilemuuzaji.app.network.ApiClient
 import com.mobilemuuzaji.app.network.models.InventoryItem
 import com.mobilemuuzaji.app.network.models.SalesItem
 import com.mobilemuuzaji.app.network.models.UpdateInventoryRequest
+import android.widget.RadioButton
+import android.widget.RadioGroup
+import com.mobilemuuzaji.app.network.models.SaleRequest
+import com.mobilemuuzaji.app.network.models.SaleResponse
 import com.mobilemuuzaji.app.repository.InventoryRepository
 import com.mobilemuuzaji.app.repository.SalesRepository
 import kotlinx.coroutines.Dispatchers
@@ -352,6 +356,9 @@ class OrganizationActivity : AppCompatActivity() {
                 allItems = inventoryItems,
                 onEditClick = { item, position ->
                     showEditInventoryDialog(item, position)
+                },
+                onSellClick = { item, position ->
+                    showSellDialog(item, position)
                 }
             )
             tvEmptyState.text       = "No inventory items"
@@ -710,5 +717,255 @@ class OrganizationActivity : AppCompatActivity() {
         )
         inventoryItems = updatedList
         refreshList()
+    }
+
+    private fun showSellDialog(item: InventoryItem, position: Int) {
+        val dialog = Dialog(this)
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        dialog.setContentView(R.layout.dialog_sell)
+
+        dialog.window?.setLayout(
+            (resources.displayMetrics.widthPixels * 0.9).toInt(),
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+
+        val tvSellTitle      = dialog.findViewById<TextView>(R.id.tvSellTitle)
+        val tvCurrentStock   = dialog.findViewById<TextView>(R.id.tvCurrentStock)
+        val llErrors         = dialog.findViewById<LinearLayout>(R.id.llSellDialogErrors)
+        val rgSellMode       = dialog.findViewById<RadioGroup>(R.id.rgSellMode)
+        val rbQuantitySold   = dialog.findViewById<RadioButton>(R.id.rbQuantitySold)
+        val rbLeftover       = dialog.findViewById<RadioButton>(R.id.rbLeftover)
+        val tvQuantityLabel  = dialog.findViewById<TextView>(R.id.tvQuantityLabel)
+        val etSellQuantity   = dialog.findViewById<EditText>(R.id.etSellQuantity)
+        val tvCalculatedSold = dialog.findViewById<TextView>(R.id.tvCalculatedSold)
+        val btnCancel        = dialog.findViewById<Button>(R.id.btnSellDialogCancel)
+        val btnSubmit        = dialog.findViewById<Button>(R.id.btnSellDialogSubmit)
+
+        // Populate title and stock info
+        tvSellTitle.text    = "Sell ${item.item_name}"
+        tvCurrentStock.text = "Current stock: ${item.item_quantity} ${item.unit}"
+
+        // Switch label and show calculated result when radio changes
+        rgSellMode.setOnCheckedChangeListener { _, checkedId ->
+            when (checkedId) {
+                R.id.rbQuantitySold -> {
+                    tvQuantityLabel.text       = "Quantity Sold"
+                    tvCalculatedSold.visibility = View.GONE
+                    etSellQuantity.text.clear()
+                    etSellQuantity.hint = "Enter quantity sold"
+                }
+                R.id.rbLeftover -> {
+                    tvQuantityLabel.text       = "Leftover Quantity"
+                    etSellQuantity.text.clear()
+                    etSellQuantity.hint = "Enter leftover quantity"
+                }
+            }
+        }
+
+        // Show calculated quantity sold as user types in leftover mode
+        etSellQuantity.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                if (rbLeftover.isChecked) {
+                    val leftover = s.toString().toIntOrNull()
+                    if (leftover != null) {
+                        val quantitySold = item.item_quantity - leftover
+                        if (quantitySold > 0) {
+                            tvCalculatedSold.text       = "Quantity sold: $quantitySold"
+                            tvCalculatedSold.visibility = View.VISIBLE
+                        } else {
+                            tvCalculatedSold.visibility = View.GONE
+                        }
+                    } else {
+                        tvCalculatedSold.visibility = View.GONE
+                    }
+                }
+            }
+        })
+
+        btnCancel.setOnClickListener { dialog.dismiss() }
+
+        btnSubmit.setOnClickListener {
+            val input = etSellQuantity.text.toString().trim()
+            llErrors.removeAllViews()
+            llErrors.visibility = View.GONE
+
+            // Validate input
+            if (input.isEmpty()) {
+                showDialogErrors(llErrors, listOf("Please enter a quantity"))
+                return@setOnClickListener
+            }
+
+            val inputValue = input.toIntOrNull()
+            if (inputValue == null || inputValue < 0) {
+                showDialogErrors(llErrors, listOf("Please enter a valid number"))
+                return@setOnClickListener
+            }
+
+            // Calculate quantity sold based on mode
+            val quantitySold = if (rbQuantitySold.isChecked) {
+                inputValue
+            } else {
+                item.item_quantity - inputValue   // leftover mode
+            }
+
+            // Validate quantity sold
+            when {
+                quantitySold <= 0 -> {
+                    showDialogErrors(llErrors, listOf("Quantity sold must be greater than zero"))
+                    return@setOnClickListener
+                }
+                quantitySold > item.item_quantity -> {
+                    showDialogErrors(llErrors, listOf(
+                        "Cannot sell more than current stock (${item.item_quantity} ${item.unit})"
+                    ))
+                    return@setOnClickListener
+                }
+            }
+
+            btnSubmit.isEnabled = false
+
+            lifecycleScope.launch {
+                // Calculate new inventory quantity after sale
+                val newQuantity = item.item_quantity - quantitySold
+
+                if (NetworkUtils.isOnline(this@OrganizationActivity)) {
+                    // Online — send to backend
+                    try {
+                        val response = withContext(Dispatchers.IO) {
+                            ApiClient.apiService.makeSale(
+                                SaleRequest(
+                                    item_id       = item.id,
+                                    quantity_sold = quantitySold
+                                )
+                            )
+                        }
+
+                        if (response.isSuccessful) {
+                            val saleResponse = response.body()!!
+
+                            withContext(Dispatchers.IO) {
+                                // Update inventory quantity in Room
+                                inventoryRepository.updateInventoryItem(
+                                    InventoryEntity(
+                                        id           = item.id,
+                                        itemName     = item.item_name,
+                                        itemQuantity = newQuantity,
+                                        unit         = item.unit,
+                                        costPerUnit  = item.cost_per_unit,
+                                        orgId        = orgId,
+                                        isSynced     = true
+                                    )
+                                )
+
+                                // Save sale record to Room
+                                salesRepository.saveSale(
+                                    SalesEntity(
+                                        id           = saleResponse.id,
+                                        itemName     = saleResponse.item_name,
+                                        itemQuantity = saleResponse.item_quantity,
+                                        earnings     = saleResponse.earnings,
+                                        orgId        = orgId,
+                                        isSynced     = true
+                                    )
+                                )
+                            }
+
+                            // Update both in-memory lists
+                            updateInventoryQuantityInList(position, newQuantity)
+                            addSaleToList(saleResponse)
+                            dialog.dismiss()
+
+                        } else {
+                            val errorBody = response.errorBody()?.string()
+                            showDialogErrors(llErrors, listOf(parseErrorMessage(errorBody)))
+                        }
+
+                    } catch (e: Exception) {
+                        showDialogErrors(llErrors, listOf("Network error: ${e.message}"))
+                    }
+
+                } else {
+                    // Offline — update Room only
+                    val tempSaleId = -(System.currentTimeMillis().toInt())
+
+                    withContext(Dispatchers.IO) {
+                        // Update inventory quantity in Room
+                        inventoryRepository.updateInventoryItem(
+                            InventoryEntity(
+                                id           = item.id,
+                                itemName     = item.item_name,
+                                itemQuantity = newQuantity,
+                                unit         = item.unit,
+                                costPerUnit  = item.cost_per_unit,
+                                orgId        = orgId,
+                                isSynced     = false
+                            )
+                        )
+
+                        // Save sale with temp id
+                        salesRepository.saveSale(
+                            SalesEntity(
+                                id           = tempSaleId,
+                                itemName     = item.item_name,
+                                itemQuantity = quantitySold,
+                                earnings     = 0,      // unknown until synced with backend
+                                orgId        = orgId,
+                                isSynced     = false
+                            )
+                        )
+                    }
+
+                    // Update both in-memory lists
+                    updateInventoryQuantityInList(position, newQuantity)
+                    addOfflineSaleToList(item, quantitySold, tempSaleId)
+                    dialog.dismiss()
+                }
+
+                btnSubmit.isEnabled = true
+            }
+        }
+
+        dialog.show()
+    }
+
+    // Update inventory quantity in the in-memory list
+    private fun updateInventoryQuantityInList(position: Int, newQuantity: Int) {
+        val updatedList = inventoryItems.toMutableList()
+        val existingItem = updatedList[position]
+        updatedList[position] = existingItem.copy(item_quantity = newQuantity)
+        inventoryItems = updatedList
+        refreshList()
+    }
+
+    // Add a synced sale from server response to the in-memory sales list
+    private fun addSaleToList(saleResponse: SaleResponse) {
+        val updatedSales = salesItems.toMutableList()
+        updatedSales.add(0,   // add to top since it's the most recent
+            SalesItem(
+                id            = saleResponse.id,
+                item_name     = saleResponse.item_name,
+                item_quantity = saleResponse.item_quantity,
+                earnings      = saleResponse.earnings,
+                date          = saleResponse.date
+            )
+        )
+        salesItems = updatedSales
+    }
+
+    // Add an offline sale to the in-memory sales list
+    private fun addOfflineSaleToList(item: InventoryItem, quantitySold: Int, tempId: Int) {
+        val updatedSales = salesItems.toMutableList()
+        updatedSales.add(0,
+            SalesItem(
+                id            = tempId,
+                item_name     = item.item_name,
+                item_quantity = quantitySold,
+                earnings      = 0,       // unknown until synced
+                date          = "Pending sync"
+            )
+        )
+        salesItems = updatedSales
     }
 }

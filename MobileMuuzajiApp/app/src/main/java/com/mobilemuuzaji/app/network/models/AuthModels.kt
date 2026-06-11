@@ -93,6 +93,20 @@ data class UpdateInventoryRequest(
     val org_id:        Int
 )
 
+data class SaleRequest(
+    val item_id: Int,
+    val quantity_sold: Int
+)
+
+data class SaleResponse(
+    val id: Int,
+    val item_name: String,
+    val item_quantity: Int,
+    val date: String,
+    val earnings: Int,
+    val org_id: Int
+)
+
 // Returned when validation fails
 data class ErrorResponse(
     val detail: Any?  = null,   // Pydantic validation errors
