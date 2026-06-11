@@ -40,6 +40,7 @@ import android.view.Window
 import com.mobilemuuzaji.app.network.models.NewInventoryRequest
 import com.google.gson.Gson
 import com.mobilemuuzaji.app.network.models.ErrorResponse
+import com.mobilemuuzaji.app.network.models.UserData
 
 data class SalesFilterState(
     val dateFilter:  String?  = null,   // "today", "week", "month", "all", or custom range
@@ -64,6 +65,18 @@ class OrganizationActivity : AppCompatActivity() {
     private lateinit var llSearchBar:   LinearLayout
     private lateinit var etSearch:      EditText
     private lateinit var btnClearSearch:ImageButton
+    private lateinit var btnOpenPanel:              ImageButton
+    private lateinit var llSidePanel:               LinearLayout
+    private lateinit var btnClosePanel:             ImageButton
+    private lateinit var tvWelcome:                 TextView
+    private lateinit var panelTabInventory:         TextView
+    private lateinit var panelTabEmployees:         TextView
+    private lateinit var llPanelInventoryContent:   LinearLayout
+    private lateinit var llPanelEmployeeContent:    LinearLayout
+    private lateinit var btnNewEmployee:            Button
+    private lateinit var lvEmployees:               ListView
+    private lateinit var sessionManager:   SessionManager
+
     private var isSearchVisible = false
 
     private lateinit var inventoryRepository: InventoryRepository
@@ -81,6 +94,10 @@ class OrganizationActivity : AppCompatActivity() {
     private var filterState     = SalesFilterState()
     private var groupedSales    = listOf<GroupedSaleItem>()
 
+    private var isPanelOpen    = false
+    private var isAdminOfOrg   = false
+    private var employees      = listOf<UserData>()
+
     private var orgId   = -1
     private var orgName = ""
 
@@ -94,6 +111,8 @@ class OrganizationActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_organization)
+
+        sessionManager = SessionManager(this)
 
         // Retrieve data passed from OrganizationsActivity
         orgId   = intent.getIntExtra("org_id", -1)
@@ -210,6 +229,8 @@ class OrganizationActivity : AppCompatActivity() {
         if (NetworkUtils.isOnline(this)) {
             fetchFromApi()
         }
+
+        setupSidePanel()
     }
 
     private fun loadFromLocal() {
@@ -1134,6 +1155,129 @@ class OrganizationActivity : AppCompatActivity() {
             lvItems.adapter         = SalesAdapter(this, filteredSales)
             tvEmptyState.text       = "No sales recorded"
             tvEmptyState.visibility = if (filteredSales.isEmpty()) View.VISIBLE else View.GONE
+        }
+    }
+
+    private fun setupSidePanel() {
+        btnOpenPanel            = findViewById(R.id.btnOpenPanel)
+        llSidePanel             = findViewById(R.id.llSidePanel)
+        btnClosePanel           = findViewById(R.id.btnClosePanel)
+        tvWelcome               = findViewById(R.id.tvWelcome)
+        panelTabInventory       = findViewById(R.id.panelTabInventory)
+        panelTabEmployees       = findViewById(R.id.panelTabEmployees)
+        llPanelInventoryContent = findViewById(R.id.llPanelInventoryContent)
+        llPanelEmployeeContent  = findViewById(R.id.llPanelEmployeeContent)
+        btnNewEmployee          = findViewById(R.id.btnNewEmployee)
+        lvEmployees             = findViewById(R.id.lvEmployees)
+
+        // Set welcome message
+        val userName = sessionManager.getName() ?: "User"
+        tvWelcome.text = "Welcome, $userName"
+
+        // Check if the current user is admin of this org
+        isAdminOfOrg = sessionManager.getAdminOrgs().any { it.id == orgId }
+
+        // Style employees tab based on admin status
+        if (isAdminOfOrg) {
+            panelTabEmployees.setTextColor(android.graphics.Color.BLACK)
+            panelTabEmployees.alpha = 1f
+        } else {
+            panelTabEmployees.setTextColor(android.graphics.Color.GRAY)
+            panelTabEmployees.alpha = 0.5f
+        }
+
+        // Open panel
+        btnOpenPanel.setOnClickListener { openPanel() }
+
+        // Close panel
+        btnClosePanel.setOnClickListener { closePanel() }
+
+        // Panel tab — inventory
+        panelTabInventory.setOnClickListener {
+            showPanelTab(showInventory = true)
+        }
+
+        // Panel tab — employees
+        panelTabEmployees.setOnClickListener {
+            if (isAdminOfOrg) {
+                showPanelTab(showInventory = false)
+            } else {
+                android.widget.Toast.makeText(
+                    this,
+                    "Only the organization admin can view employees",
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+
+        // Dummy new employee button
+        btnNewEmployee.setOnClickListener {
+            // TODO: implement new employee
+        }
+    }
+
+    private fun openPanel() {
+        llSidePanel.visibility = View.VISIBLE
+        val anim = android.view.animation.AnimationUtils.loadAnimation(this, R.anim.slide_in_left)
+        llSidePanel.startAnimation(anim)
+        isPanelOpen = true
+
+        // Load employees into panel when opening
+        loadEmployeesIntoPanel()
+    }
+
+    private fun closePanel() {
+        val anim = android.view.animation.AnimationUtils.loadAnimation(this, R.anim.slide_out_left)
+        anim.setAnimationListener(object : android.view.animation.Animation.AnimationListener {
+            override fun onAnimationStart(a: android.view.animation.Animation?) {}
+            override fun onAnimationRepeat(a: android.view.animation.Animation?) {}
+            override fun onAnimationEnd(a: android.view.animation.Animation?) {
+                llSidePanel.visibility = View.GONE
+            }
+        })
+        llSidePanel.startAnimation(anim)
+        isPanelOpen = false
+    }
+
+    private fun showPanelTab(showInventory: Boolean) {
+        if (showInventory) {
+            llPanelInventoryContent.visibility = View.VISIBLE
+            llPanelEmployeeContent.visibility  = View.GONE
+            panelTabInventory.setTypeface(null, android.graphics.Typeface.BOLD)
+            panelTabEmployees.setTypeface(null, android.graphics.Typeface.NORMAL)
+        } else {
+            llPanelInventoryContent.visibility = View.GONE
+            llPanelEmployeeContent.visibility  = View.VISIBLE
+            panelTabEmployees.setTypeface(null, android.graphics.Typeface.BOLD)
+            panelTabInventory.setTypeface(null, android.graphics.Typeface.NORMAL)
+        }
+    }
+
+    private fun loadEmployeesIntoPanel() {
+        // Load from Room
+        lifecycleScope.launch {
+            val localEmployees = withContext(Dispatchers.IO) {
+                organizationRepository.getEmployeesForOrganization(orgId)
+            }
+
+            // Convert UserEntity to UserData for the adapter
+            employees = localEmployees.map { entity ->
+                UserData(
+                    id                  = entity.id,
+                    name                = entity.name,
+                    email               = entity.email,
+                    admin_orgs        = emptyList(),
+                    employee_orgs  = emptyList()
+                )
+            }
+
+            lvEmployees.adapter = EmployeeAdapter(
+                context    = this@OrganizationActivity,
+                employees  = employees,
+                onRemoveClick = { employee ->
+                    // TODO: implement remove employee
+                }
+            )
         }
     }
 }
