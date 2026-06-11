@@ -110,12 +110,13 @@
         android:textSize="14sp"
         android:visibility="gone"/>
 
-    <!-- Tabs -->
+    <!-- Tabs + controls row -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:background="#F5F5F5">
+        android:background="#F5F5F5"
+        android:gravity="center_vertical">
 
         <TextView
             android:id="@+id/tabInventory"
@@ -140,6 +141,28 @@
             android:paddingBottom="12dp"
             android:textSize="14sp"/>
 
+        <!-- Filter button — only visible on sales tab -->
+        <ImageButton
+            android:id="@+id/btnFilter"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@android:drawable/ic_menu_sort_by_size"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:layout_marginEnd="4dp"
+            android:visibility="gone"
+            android:contentDescription="Filter"/>
+
+        <!-- Group toggle button — only visible on sales tab -->
+        <ImageButton
+            android:id="@+id/btnGroupToggle"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@android:drawable/ic_menu_agenda"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:layout_marginEnd="8dp"
+            android:visibility="gone"
+            android:contentDescription="Group"/>
+
     </LinearLayout>
 
     <!-- Tab underline indicator -->
@@ -148,6 +171,34 @@
         android:layout_width="match_parent"
         android:layout_height="3dp"
         android:background="#1976D2"/>
+
+    <!-- Active filters display -->
+    <LinearLayout
+        android:id="@+id/llActiveFilters"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="8dp"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/tvActiveFilter"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textSize="12sp"
+            android:textColor="#1976D2"/>
+
+        <TextView
+            android:id="@+id/tvClearFilter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Clear"
+            android:textSize="12sp"
+            android:textColor="#C62828"
+            android:paddingStart="8dp"/>
+
+    </LinearLayout>
 
     <!-- Empty state -->
     <TextView

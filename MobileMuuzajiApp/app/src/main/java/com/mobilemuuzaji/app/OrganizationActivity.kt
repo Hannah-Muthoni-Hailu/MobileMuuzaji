@@ -13,6 +13,8 @@ import com.mobilemuuzaji.app.network.ApiClient
 import com.mobilemuuzaji.app.network.models.InventoryItem
 import com.mobilemuuzaji.app.network.models.SalesItem
 import com.mobilemuuzaji.app.network.models.UpdateInventoryRequest
+import com.mobilemuuzaji.app.network.models.GroupedSaleItem
+import java.util.Calendar
 import android.widget.RadioButton
 import android.widget.RadioGroup
 import com.mobilemuuzaji.app.network.models.SaleRequest
@@ -39,6 +41,13 @@ import com.mobilemuuzaji.app.network.models.NewInventoryRequest
 import com.google.gson.Gson
 import com.mobilemuuzaji.app.network.models.ErrorResponse
 
+data class SalesFilterState(
+    val dateFilter:  String?  = null,   // "today", "week", "month", "all", or custom range
+    val sortBy:      String?  = null,   // "date", "alphabetical", "earnings"
+    val customStart: Long?    = null,
+    val customEnd:   Long?    = null
+)
+
 class OrganizationActivity : AppCompatActivity() {
 
     private lateinit var tvOrgName:      TextView
@@ -61,6 +70,16 @@ class OrganizationActivity : AppCompatActivity() {
     private lateinit var salesRepository:     SalesRepository
     private lateinit var organizationRepository: OrganizationRepository
     private val db by lazy { AppDatabase.getInstance(applicationContext) }
+
+    private lateinit var btnFilter:       ImageButton
+    private lateinit var btnGroupToggle:  ImageButton
+    private lateinit var llActiveFilters: LinearLayout
+    private lateinit var tvActiveFilter:  TextView
+    private lateinit var tvClearFilter:   TextView
+
+    private var isGroupedView   = false
+    private var filterState     = SalesFilterState()
+    private var groupedSales    = listOf<GroupedSaleItem>()
 
     private var orgId   = -1
     private var orgName = ""
@@ -95,6 +114,15 @@ class OrganizationActivity : AppCompatActivity() {
         llSearchBar    = findViewById(R.id.llSearchBar)
         etSearch       = findViewById(R.id.etSearch)
         btnClearSearch = findViewById(R.id.btnClearSearch)
+        btnFilter       = findViewById(R.id.btnFilter)
+        btnGroupToggle  = findViewById(R.id.btnGroupToggle)
+        llActiveFilters = findViewById(R.id.llActiveFilters)
+        tvActiveFilter  = findViewById(R.id.tvActiveFilter)
+        tvClearFilter   = findViewById(R.id.tvClearFilter)
+
+        btnFilter.setOnClickListener {
+            showFilterDropdown()
+        }
 
         tvOrgName.text = orgName
 
@@ -132,6 +160,23 @@ class OrganizationActivity : AppCompatActivity() {
             }
         }
 
+        // Filtering toggles
+        btnGroupToggle.setOnClickListener {
+            isGroupedView = !isGroupedView
+            // Change icon to visually indicate current mode
+            btnGroupToggle.setImageResource(
+                if (isGroupedView) android.R.drawable.ic_menu_my_calendar
+                else android.R.drawable.ic_menu_agenda
+            )
+            refreshSalesView()
+        }
+
+        tvClearFilter.setOnClickListener {
+            filterState = SalesFilterState()
+            llActiveFilters.visibility = View.GONE
+            refreshSalesView()
+        }
+
         // Clear button wipes the search and resets the list
         btnClearSearch.setOnClickListener {
             etSearch.text.clear()
@@ -153,6 +198,7 @@ class OrganizationActivity : AppCompatActivity() {
                 when (val adapter = lvItems.adapter) {
                     is InventoryAdapter -> adapter.filter.filter(query)
                     is SalesAdapter     -> adapter.filter.filter(query)
+                    is GroupedSalesAdapter  -> adapter.filter.filter(query)
                 }
             }
         })
@@ -331,16 +377,22 @@ class OrganizationActivity : AppCompatActivity() {
     private fun switchTab(toInventory: Boolean) {
         showingInventory = toInventory
 
+        // Show filter and group buttons only on sales tab
+        btnFilter.visibility      = if (toInventory) View.GONE else View.VISIBLE
+        btnGroupToggle.visibility = if (toInventory) View.GONE else View.VISIBLE
+
         if (toInventory) {
             tabInventory.setTextColor(Color.parseColor("#1976D2"))
             tabInventory.setTypeface(null, android.graphics.Typeface.BOLD)
             tabSales.setTextColor(Color.parseColor("#888888"))
             tabSales.setTypeface(null, android.graphics.Typeface.NORMAL)
+            llActiveFilters.visibility = View.GONE
         } else {
             tabSales.setTextColor(Color.parseColor("#1976D2"))
             tabSales.setTypeface(null, android.graphics.Typeface.BOLD)
             tabInventory.setTextColor(Color.parseColor("#888888"))
             tabInventory.setTypeface(null, android.graphics.Typeface.NORMAL)
+            updateActiveFilterLabel()
         }
 
         refreshList()   // ← call refreshList instead of updateList
@@ -364,9 +416,7 @@ class OrganizationActivity : AppCompatActivity() {
             tvEmptyState.text       = "No inventory items"
             tvEmptyState.visibility = if (inventoryItems.isEmpty()) View.VISIBLE else View.GONE
         } else {
-            lvItems.adapter         = SalesAdapter(this, salesItems)
-            tvEmptyState.text       = "No sales recorded"
-            tvEmptyState.visibility = if (salesItems.isEmpty()) View.VISIBLE else View.GONE
+            refreshSalesView()
         }
     }
 
@@ -967,5 +1017,123 @@ class OrganizationActivity : AppCompatActivity() {
             )
         )
         salesItems = updatedSales
+    }
+
+    private fun showFilterDropdown() {
+        val options = arrayOf(
+            "Sort: Newest first",
+            "Sort: Alphabetical",
+            "Sort: Earnings (highest first)",
+            "─────────────────",
+            "Date: Today",
+            "Date: This week",
+            "Date: This month",
+            "Date: All time",
+            "Date: Custom range"
+        )
+
+        val popup = android.widget.PopupMenu(this, btnFilter)
+        options.forEachIndexed { index, option ->
+            popup.menu.add(0, index, index, option)
+        }
+
+        popup.setOnMenuItemClickListener { menuItem ->
+            when (menuItem.itemId) {
+                0 -> applyFilter(filterState.copy(sortBy = "date"))
+                1 -> applyFilter(filterState.copy(sortBy = "alphabetical"))
+                2 -> applyFilter(filterState.copy(sortBy = "earnings"))
+                3 -> false  // separator — do nothing
+                4 -> applyFilter(filterState.copy(dateFilter = "today"))
+                5 -> applyFilter(filterState.copy(dateFilter = "week"))
+                6 -> applyFilter(filterState.copy(dateFilter = "month"))
+                7 -> applyFilter(filterState.copy(dateFilter = "all"))
+                8 -> showDateRangePicker()
+                else -> false
+            }
+            true
+        }
+
+        popup.show()
+    }
+
+    private fun showDateRangePicker() {
+        // Start date picker
+        val startCalendar = Calendar.getInstance()
+        android.app.DatePickerDialog(
+            this,
+            { _, startYear, startMonth, startDay ->
+                val start = Calendar.getInstance()
+                start.set(startYear, startMonth, startDay, 0, 0, 0)
+
+                // End date picker
+                android.app.DatePickerDialog(
+                    this,
+                    { _, endYear, endMonth, endDay ->
+                        val end = Calendar.getInstance()
+                        end.set(endYear, endMonth, endDay, 23, 59, 59)
+
+                        applyFilter(
+                            filterState.copy(
+                                dateFilter  = "custom",
+                                customStart = start.timeInMillis,
+                                customEnd   = end.timeInMillis
+                            )
+                        )
+                    },
+                    startCalendar.get(Calendar.YEAR),
+                    startCalendar.get(Calendar.MONTH),
+                    startCalendar.get(Calendar.DAY_OF_MONTH)
+                ).show()
+            },
+            startCalendar.get(Calendar.YEAR),
+            startCalendar.get(Calendar.MONTH),
+            startCalendar.get(Calendar.DAY_OF_MONTH)
+        ).show()
+    }
+
+    private fun applyFilter(newState: SalesFilterState): Boolean {
+        filterState = newState
+        refreshSalesView()
+        updateActiveFilterLabel()
+        return true
+    }
+
+    private fun updateActiveFilterLabel() {
+        val parts = mutableListOf<String>()
+
+        when (filterState.sortBy) {
+            "alphabetical" -> parts.add("A-Z")
+            "earnings"     -> parts.add("Earnings ↓")
+            "date"         -> parts.add("Newest first")
+        }
+
+        when (filterState.dateFilter) {
+            "today"  -> parts.add("Today")
+            "week"   -> parts.add("This week")
+            "month"  -> parts.add("This month")
+            "custom" -> parts.add("Custom range")
+        }
+
+        if (parts.isNotEmpty()) {
+            tvActiveFilter.text       = "Filters: ${parts.joinToString(" · ")}"
+            llActiveFilters.visibility = View.VISIBLE
+        } else {
+            llActiveFilters.visibility = View.GONE
+        }
+    }
+
+    private fun refreshSalesView() {
+        val filteredSales = SalesFilterHelper.filter(salesItems, filterState)
+        groupedSales      = SalesFilterHelper.group(filteredSales)
+
+        if (isGroupedView) {
+            lvItems.adapter         = GroupedSalesAdapter(this, groupedSales)
+            tvEmptyState.text       = "No sales recorded"
+            tvEmptyState.visibility = if (groupedSales.isEmpty()) View.VISIBLE else View.GONE
+        } else {
+            lvItems.adapter         = SalesAdapter(this, filteredSales)
+            tvEmptyState.text       = "No sales recorded"
+            tvEmptyState.visibility = if (filteredSales.isEmpty()) View.VISIBLE else View.GONE
+        }
     }
 }

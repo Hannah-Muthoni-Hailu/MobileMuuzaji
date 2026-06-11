@@ -107,6 +107,13 @@ data class SaleResponse(
     val org_id: Int
 )
 
+data class GroupedSaleItem(
+    val item_name:      String,
+    val total_quantity: Int,
+    val total_earnings: Int,
+    val sale_count:     Int
+)
+
 // Returned when validation fails
 data class ErrorResponse(
     val detail: Any?  = null,   // Pydantic validation errors
