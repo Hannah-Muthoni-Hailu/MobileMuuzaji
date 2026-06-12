@@ -12,12 +12,14 @@ import com.mobilemuuzaji.app.network.models.SaleRequest
 import com.mobilemuuzaji.app.network.models.SaleResponse
 import com.mobilemuuzaji.app.network.models.NewEmployeeRequest
 import com.mobilemuuzaji.app.network.models.EmployeeOrgResponse
+import com.mobilemuuzaji.app.network.models.RemoveEmployeeRequest
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Path
 import retrofit2.http.GET
+import retrofit2.http.HTTP
 
 interface ApiService {
 
@@ -47,4 +49,7 @@ interface ApiService {
 
     @POST("new-employee")
     suspend fun addEmployee(@Body request: NewEmployeeRequest): Response<EmployeeOrgResponse>
+
+    @HTTP(method = "DELETE", path = "remove-employee", hasBody = true)
+    suspend fun removeEmployee(@Body request: RemoveEmployeeRequest): Response<EmployeeOrgResponse>
 }

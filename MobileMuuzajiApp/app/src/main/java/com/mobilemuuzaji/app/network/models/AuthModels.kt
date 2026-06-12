@@ -133,6 +133,11 @@ data class EmployeeData(
     val email: String
 ) : java.io.Serializable
 
+data class RemoveEmployeeRequest(
+    val org_id:      Int,
+    val employee_id: Int
+)
+
 // Returned when validation fails
 data class ErrorResponse(
     val detail: Any?  = null,   // Pydantic validation errors

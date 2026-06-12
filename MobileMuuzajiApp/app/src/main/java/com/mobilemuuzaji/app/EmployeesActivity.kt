@@ -13,6 +13,7 @@ import com.mobilemuuzaji.app.network.models.EmployeeData
 import com.mobilemuuzaji.app.network.models.EmployeeOrgResponse
 import com.mobilemuuzaji.app.network.models.ErrorResponse
 import com.mobilemuuzaji.app.network.models.NewEmployeeRequest
+import com.mobilemuuzaji.app.network.models.RemoveEmployeeRequest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -151,13 +152,76 @@ class EmployeesActivity : AppCompatActivity() {
 
     private fun updateList() {
         lvEmployees.adapter = EmployeeAdapter(
-            context    = this,
-            employees  = employees,
+            context      = this,
+            employees    = employees,
             onRemoveClick = { employee ->
-                // TODO: implement remove employee
+                showRemoveConfirmationDialog(employee)
             }
         )
         tvEmptyState.visibility = if (employees.isEmpty()) View.VISIBLE else View.GONE
+    }
+
+    private fun showRemoveConfirmationDialog(employee: EmployeeData) {
+        if (!NetworkUtils.isOnline(this)) {
+            Toast.makeText(
+                this,
+                "Employee management requires an internet connection",
+                Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+
+        android.app.AlertDialog.Builder(this)
+            .setTitle("Remove Employee")
+            .setMessage("Are you sure you want to remove ${employee.name} from this organization? Their account will not be deleted.")
+            .setPositiveButton("Remove") { dialog, _ ->
+                dialog.dismiss()
+                removeEmployee(employee)
+            }
+            .setNegativeButton("Cancel") { dialog, _ ->
+                dialog.dismiss()
+            }
+            .show()
+    }
+
+    private fun removeEmployee(employee: EmployeeData) {
+        progressBar.visibility = View.VISIBLE
+        tvError.visibility     = View.GONE
+
+        lifecycleScope.launch {
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    ApiClient.apiService.removeEmployee(
+                        RemoveEmployeeRequest(
+                            org_id      = orgId,
+                            employee_id = employee.id
+                        )
+                    )
+                }
+
+                if (response.isSuccessful) {
+                    val orgResponse = response.body()!!
+
+                    // Replace list with updated list from server
+                    employees.clear()
+                    employees.addAll(orgResponse.employees)
+
+                    updateList()
+                    showSuccess("${employee.name} has been removed from the organization")
+
+                } else {
+                    val errorBody = response.errorBody()?.string()
+                    tvError.text       = parseErrorMessage(errorBody)
+                    tvError.visibility = View.VISIBLE
+                }
+
+            } catch (e: Exception) {
+                tvError.text       = "Network error: ${e.message}"
+                tvError.visibility = View.VISIBLE
+            }
+
+            progressBar.visibility = View.GONE
+        }
     }
 
     private fun showSuccess(message: String) {
