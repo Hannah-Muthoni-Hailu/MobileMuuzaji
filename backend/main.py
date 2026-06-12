@@ -120,6 +120,10 @@ class SaleModel(BaseModel):
     item_id: int
     quantity_sold: int
 
+class RemoveEmployeeRequest(BaseModel):
+    org_id:      int
+    employee_id: int
+
 @app.get("/")
 def root():
     return {"status": "ok"}
@@ -396,3 +400,40 @@ def delete_inventory(id: int, db: Session = Depends(get_db)):
     except Exception as e:
         logger.error(f"Database/Server failure: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal Server error")
+
+@app.delete("/remove-employee")
+def remove_employee(org_id: int, employee_id: int, db: Session = Depends(get_db)):
+    # Check organization exists
+    organization = db.query(Organization).filter(Organization.id == org_id).first()
+    if not organization:
+        raise HTTPException(status_code=404, detail="Organization not found")
+
+    # Check employee is actually in the organization
+    employee = db.query(User).filter(User.id == employee_id).first()
+    if not employee:
+        raise HTTPException(status_code=404, detail="Employee not found")
+
+    if employee not in organization.employees:
+        raise HTTPException(status_code=400, detail="Employee is not in this organization")
+
+    # Remove from organization without deleting the account
+    organization.employees.remove(employee)
+    db.commit()
+
+    org_result = {
+            "id": organization.id,
+            "name": organization.org_name,
+            "admin_id": organization.admin.id,
+            "admin_name": organization.admin.name,
+            "employees": []
+        }
+
+    for employee in organization.employees:
+        emp_result = {
+            "id": employee.id,
+            "name": employee.name,
+            "email": employee.email
+        }
+        org_result["employees"].append(emp_result)
+
+    return org_result
