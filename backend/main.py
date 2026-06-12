@@ -402,21 +402,18 @@ def delete_inventory(id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail="Internal Server error")
 
 @app.delete("/remove-employee")
-def remove_employee(org_id: int, employee_id: int, db: Session = Depends(get_db)):
-    # Check organization exists
-    organization = db.query(Organization).filter(Organization.id == org_id).first()
+def remove_employee(request: RemoveEmployeeRequest, db: Session = Depends(get_db)):
+    organization = db.query(Organization).filter(Organization.id == request.org_id).first()
     if not organization:
         raise HTTPException(status_code=404, detail="Organization not found")
 
-    # Check employee is actually in the organization
-    employee = db.query(User).filter(User.id == employee_id).first()
+    employee = db.query(User).filter(User.id == request.employee_id).first()
     if not employee:
         raise HTTPException(status_code=404, detail="Employee not found")
 
     if employee not in organization.employees:
         raise HTTPException(status_code=400, detail="Employee is not in this organization")
 
-    # Remove from organization without deleting the account
     organization.employees.remove(employee)
     db.commit()
 
