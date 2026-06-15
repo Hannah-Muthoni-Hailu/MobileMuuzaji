@@ -341,46 +341,50 @@ def update_product(item_id: int, item: UpdateInventoryRequest, db: Session = Dep
 @app.post("/sale")
 def sale(saleitem: SaleModel, db: Session = Depends(get_db)):
     try:
-        # Decrease quantity in inventory
-        inventory_item = db.query(Inventory).filter(Inventory.id == saleitem.item_id).first()
-    except Exception as e:
-        logger.error(f"Database/Server failure: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal Server error")
-    
-    if inventory_item.item_quantity - saleitem.quantity_sold < 1 :
-        raise HTTPException(status_code=400, detail="Not enough stock")
-
-    # Update inventory
-    inventory_item.item_quantity -= saleitem.quantity_sold
-    try:
-        db.commit()
-        db.refresh(inventory_item)
-    except Exception as e:
-        logger.error(f"Database/Server failure: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal Server error")
-    
-    # Record a sale
-    try:
-        earnings = saleitem.quantity_sold * inventory_item.cost_per_unit
-
-        sale_entry = Sales(
-            item_name=inventory_item.item_name,
-            item_quantity=saleitem.quantity_sold,
-            earnings=earnings,
-            org_id=inventory_item.org_id
+        # Lock the inventory row for update to prevent race conditions
+        # when multiple sales are processed simultaneously
+        inventory_item = (
+            db.query(Inventory)
+            .filter(Inventory.id == saleitem.item_id)
+            .with_for_update()   # ← row-level lock
+            .first()
         )
 
-        db.add(sale_entry)
+        if not inventory_item:
+            raise HTTPException(status_code=404, detail="Item not found")
+
+        if inventory_item.item_quantity - saleitem.quantity_sold < 1:
+            raise HTTPException(status_code=400, detail="Not enough stock")
+
+        # Calculate earnings
+        earnings = inventory_item.cost_per_unit * saleitem.quantity_sold
+
+        # Deduct from inventory
+        inventory_item.item_quantity -= saleitem.quantity_sold
+
+        # Create the sale record
+        new_sale = Sales(
+            item_name     = inventory_item.item_name,
+            item_quantity = saleitem.quantity_sold,
+            earnings      = earnings,
+            org_id        = inventory_item.org_id
+        )
+        db.add(new_sale)
+
+        # Commit both changes atomically
+        # If either fails, both are rolled back
         db.commit()
-        db.refresh(sale_entry)
+        db.refresh(new_sale)
+        db.refresh(inventory_item)
 
-        organization = db.query(Organization).filter(Organization.id == inventory_item.org_id).first()
-        inventory = organization.inv_items
-        sales = organization.sales_items
+        return new_sale
 
-        return sale_entry
+    except HTTPException:
+        db.rollback()
+        raise
     except Exception as e:
-        logger.error(f"Database/Server failure: {e}", exc_info=True)
+        db.rollback()
+        logger.error(f"Sale transaction failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal Server error")
 
 @app.delete("delete-inventory")
