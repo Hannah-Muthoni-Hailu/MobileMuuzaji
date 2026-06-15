@@ -348,7 +348,7 @@ def sale(saleitem: SaleModel, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail="Internal Server error")
     
     if inventory_item.item_quantity - saleitem.quantity_sold < 1 :
-        raise HTTPException(status_code=401, detail="Not enough stock")
+        raise HTTPException(status_code=400, detail="Not enough stock")
 
     # Update inventory
     inventory_item.item_quantity -= saleitem.quantity_sold
