@@ -17,6 +17,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.mobilemuuzaji.app.network.models.OrganizationData
+import com.mobilemuuzaji.app.TooltipHelper
 
 class OrganizationsActivity : AppCompatActivity() {
 
@@ -61,6 +62,21 @@ class OrganizationsActivity : AppCompatActivity() {
             intent.putExtra("org_name", org.name)
             intent.putExtra("org_role", org.role)
             startActivity(intent)
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        // Show tooltip on the New Org button the first time
+        btnNewOrg.post {
+            TooltipHelper.show(
+                context  = this,
+                anchor   = btnNewOrg,
+                message  = "Tap here to create your first organization",
+                key      = TooltipHelper.TOOLTIP_NEW_ORG,
+                arrowDirection = TooltipHelper.ArrowDirection.DOWN
+            )
         }
     }
 

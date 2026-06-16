@@ -44,6 +44,7 @@ import com.google.gson.Gson
 import com.mobilemuuzaji.app.network.models.ErrorResponse
 import com.mobilemuuzaji.app.network.models.UserData
 import com.mobilemuuzaji.app.sync.SyncManager
+import com.mobilemuuzaji.app.TooltipHelper
 
 data class SalesFilterState(
     val dateFilter:  String?  = null,   // "today", "week", "month", "all", or custom range
@@ -234,6 +235,7 @@ class OrganizationActivity : AppCompatActivity() {
         }
 
         setupSidePanel()
+        startOnboarding()
     }
 
     private fun loadFromLocal() {
@@ -1028,6 +1030,17 @@ class OrganizationActivity : AppCompatActivity() {
         }
 
         dialog.show()
+
+        // Show tooltip on the radio buttons the first time
+        rbQuantitySold.post {
+            TooltipHelper.show(
+                context        = this,
+                anchor         = rbQuantitySold,
+                message        = "Choose whether to enter how many you sold or how many are left",
+                key            = TooltipHelper.TOOLTIP_SELL_DIALOG,
+                arrowDirection = TooltipHelper.ArrowDirection.UP
+            )
+        }
     }
 
     // Update inventory quantity in the in-memory list
@@ -1274,5 +1287,52 @@ class OrganizationActivity : AppCompatActivity() {
         })
         llSidePanel.startAnimation(anim)
         isPanelOpen = false
+    }
+
+    private fun startOnboarding() {
+        btnOpenPanel.post {
+            TooltipHelper.show(
+                context = this,
+                anchor = btnOpenPanel,
+                message = "Tap here to navigate between Inventory and Employees",
+                key = TooltipHelper.TOOLTIP_SIDE_PANEL,
+                arrowDirection = TooltipHelper.ArrowDirection.DOWN,
+                onDismissed = {
+                    showNewInventoryTooltip()
+                }
+            )
+        }
+    }
+
+    private fun showNewInventoryTooltip() {
+        btnNewInventory.post {
+            TooltipHelper.show(
+                context = this,
+                anchor = btnNewInventory,
+                message = "Tap here to add a new product to your inventory",
+                key = TooltipHelper.TOOLTIP_NEW_INVENTORY,
+                arrowDirection = TooltipHelper.ArrowDirection.DOWN,
+                onDismissed = {
+                    showSellButtonTooltip()
+                }
+            )
+        }
+    }
+
+    private fun showSellButtonTooltip() {
+        lvItems.post {
+            if (lvItems.childCount > 0) {
+                val firstRow = lvItems.getChildAt(0)
+                val btnSell = firstRow.findViewById<Button>(R.id.btnSell)
+
+                TooltipHelper.show(
+                    context = this,
+                    anchor = btnSell,
+                    message = "Tap Sell to record a sale for this item",
+                    key = TooltipHelper.TOOLTIP_SELL_BUTTON,
+                    arrowDirection = TooltipHelper.ArrowDirection.UP
+                )
+            }
+        }
     }
 }

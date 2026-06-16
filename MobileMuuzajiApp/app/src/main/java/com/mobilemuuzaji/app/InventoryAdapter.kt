@@ -10,6 +10,7 @@ import android.widget.Filter
 import android.widget.Filterable
 import android.widget.TextView
 import com.mobilemuuzaji.app.network.models.InventoryItem
+import com.mobilemuuzaji.app.TooltipHelper
 
 class InventoryAdapter(
     context: Context,
@@ -30,15 +31,17 @@ class InventoryAdapter(
             .inflate(R.layout.item_inventory, parent, false)
 
         val item = allItems[position]
+        val btnSell = view.findViewById<Button>(R.id.btnSell)
+        val btnEdit = view.findViewById<Button>(R.id.btnEdit)
 
         view.findViewById<TextView>(R.id.tvItemName).text     = item.item_name
         view.findViewById<TextView>(R.id.tvItemQuantity).text = "Qty: ${item.item_quantity} ${item.unit}"
         view.findViewById<TextView>(R.id.tvItemCost).text     = "Cost: ${item.cost_per_unit} per unit"
 
-        view.findViewById<Button>(R.id.btnSell).setOnClickListener {
+        btnSell.setOnClickListener {
             onSellClick(item, position)
         }
-        view.findViewById<Button>(R.id.btnEdit).setOnClickListener {
+        btnEdit.setOnClickListener {
             onEditClick(item, position)
         }
 

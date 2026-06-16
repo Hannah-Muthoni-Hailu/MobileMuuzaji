@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:gravity="center_horizontal">
+
+    <!-- Bubble body -->
+    <TextView
+        android:id="@+id/tvTooltipText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:maxWidth="220dp"
+        android:background="@drawable/tooltip_background"
+        android:textColor="#FFFFFF"
+        android:textSize="13sp"
+        android:padding="10dp"
+        android:lineSpacingExtra="2dp"/>
+
+    <!-- Arrow pointing down toward the element -->
+    <View
+        android:id="@+id/tooltipArrow"
+        android:layout_width="12dp"
+        android:layout_height="8dp"
+        android:background="@drawable/tooltip_arrow_down"/>
+
+</LinearLayout>
