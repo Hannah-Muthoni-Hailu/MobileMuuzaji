@@ -1,8 +1,7 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
-    // Kapt plugin
-    id("kotlin-kapt")
+    id("com.google.devtools.ksp")
 }
 
 android {
@@ -41,7 +40,7 @@ dependencies {
     // Room
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
-    kapt("androidx.room:room-compiler:2.6.1")
+    ksp("androidx.room:room-compiler:2.6.1")
 
     // Coroutines (needed for Room async operations)
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
@@ -62,4 +61,7 @@ dependencies {
 
     // OkHttp for logging network requests during development
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+
+    // Manage offline syncing
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
 }

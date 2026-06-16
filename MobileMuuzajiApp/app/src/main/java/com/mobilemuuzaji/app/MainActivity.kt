@@ -6,6 +6,7 @@ import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import com.mobilemuuzaji.app.sync.SyncManager
 
 class MainActivity : AppCompatActivity() {
 
@@ -15,6 +16,8 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        SyncManager.scheduleSyncWhenOnline(applicationContext)
 
         // Bind views to their XML counterparts using their IDs
         tvMessage = findViewById(R.id.tvMessage)

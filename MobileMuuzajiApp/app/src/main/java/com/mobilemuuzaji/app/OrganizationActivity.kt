@@ -43,6 +43,7 @@ import com.mobilemuuzaji.app.network.models.NewInventoryRequest
 import com.google.gson.Gson
 import com.mobilemuuzaji.app.network.models.ErrorResponse
 import com.mobilemuuzaji.app.network.models.UserData
+import com.mobilemuuzaji.app.sync.SyncManager
 
 data class SalesFilterState(
     val dateFilter:  String?  = null,   // "today", "week", "month", "all", or custom range
@@ -609,6 +610,8 @@ class OrganizationActivity : AppCompatActivity() {
                         )
                     }
 
+                    SyncManager.scheduleSyncWhenOnline(applicationContext)
+
                     // Add to in-memory list and refresh UI
                     val updatedList = inventoryItems.toMutableList()
                     updatedList.add(
@@ -770,6 +773,8 @@ class OrganizationActivity : AppCompatActivity() {
                             )
                         )
                     }
+
+                    SyncManager.scheduleSyncWhenOnline(applicationContext)
 
                     // Update in-memory list
                     updateInventoryItemInList(
@@ -1009,6 +1014,8 @@ class OrganizationActivity : AppCompatActivity() {
                             )
                         )
                     }
+
+                    SyncManager.scheduleSyncWhenOnline(applicationContext)
 
                     // Update both in-memory lists
                     updateInventoryQuantityInList(position, newQuantity)

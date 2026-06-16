@@ -1,303 +1,332 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fitsSystemWindows="true"
-    android:paddingTop="16dp"
-    android:paddingBottom="24dp">
+    android:orientation="vertical"
+    android:background="#FFFFFF">
 
-    <!-- Main content -->
+    <!-- Top bar -->
     <LinearLayout
-        android:id="@+id/llMainContent"
+        android:id="@+id/topBar"
+        android:layout_width="match_parent"
+        android:layout_height="70dp"
+        android:background="#7FF687"
+        android:gravity="center_vertical"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="8dp"
+        android:elevation="4dp">
+
+        <ImageView
+            android:id="@+id/ivTopLogo"
+            android:layout_width="120dp"
+            android:layout_height="100dp"
+            android:src="@drawable/logo"
+            android:contentDescription="Application logo"
+            android:adjustViewBounds="true" />
+
+    </LinearLayout>
+    <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:background="#FFFFFF">
+        android:fitsSystemWindows="true"
+        android:paddingTop="4dp"
+        android:paddingBottom="24dp">
 
-        <!-- Header -->
+        <!-- Main content -->
         <LinearLayout
+            android:id="@+id/llMainContent"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:padding="16dp"
-            android:gravity="center_vertical">
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:background="#FFFFFF">
 
-            <!-- Side panel open button -->
-            <ImageButton
-                android:id="@+id/btnOpenPanel"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:src="@android:drawable/ic_menu_manage"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:layout_marginEnd="8dp"
-                android:contentDescription="Open menu"/>
-
+            <!-- Header -->
             <LinearLayout
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical">
+                android:orientation="horizontal"
+                android:padding="16dp"
+                android:gravity="center_vertical">
 
-                <TextView
-                    android:id="@+id/tvOrgName"
+                <!-- Side panel open button -->
+                <ImageButton
+                    android:id="@+id/btnOpenPanel"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:src="@android:drawable/ic_menu_manage"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:layout_marginEnd="8dp"
+                    android:contentDescription="Open menu"/>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tvOrgName"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="22sp"
+                        android:textStyle="bold"/>
+
+                    <TextView
+                        android:id="@+id/tvAdminName"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="13sp"
+                        android:textColor="#888888"/>
+
+                </LinearLayout>
+
+                <ImageButton
+                    android:id="@+id/btnSearch"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:src="@android:drawable/ic_menu_search"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:layout_marginEnd="8dp"
+                    android:contentDescription="Search"/>
+
+                <Button
+                    android:id="@+id/btnNewInventory"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textSize="22sp"
-                    android:textStyle="bold"/>
-
-                <TextView
-                    android:id="@+id/tvAdminName"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textSize="13sp"
-                    android:textColor="#888888"/>
+                    android:text="New Item"
+                    android:textSize="12sp"/>
 
             </LinearLayout>
 
-            <ImageButton
-                android:id="@+id/btnSearch"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:src="@android:drawable/ic_menu_search"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:layout_marginEnd="8dp"
-                android:contentDescription="Search"/>
+            <!-- Search bar -->
+            <LinearLayout
+                android:id="@+id/llSearchBar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:paddingBottom="8dp"
+                android:gravity="center_vertical"
+                android:visibility="gone">
 
-            <Button
-                android:id="@+id/btnNewInventory"
+                <EditText
+                    android:id="@+id/etSearch"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:hint="Search by item name..."
+                    android:inputType="text"
+                    android:maxLines="1"
+                    android:imeOptions="actionSearch"/>
+
+                <ImageButton
+                    android:id="@+id/btnClearSearch"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:src="@android:drawable/ic_menu_close_clear_cancel"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Clear search"/>
+
+            </LinearLayout>
+
+            <!-- Loading indicator -->
+            <ProgressBar
+                android:id="@+id/progressBar"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="New Inventory"
-                android:textSize="12sp"/>
+                android:layout_gravity="center"
+                android:visibility="gone"/>
 
-        </LinearLayout>
-
-        <!-- Search bar -->
-        <LinearLayout
-            android:id="@+id/llSearchBar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp"
-            android:paddingBottom="8dp"
-            android:gravity="center_vertical"
-            android:visibility="gone">
-
-            <EditText
-                android:id="@+id/etSearch"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:hint="Search by item name..."
-                android:inputType="text"
-                android:maxLines="1"
-                android:imeOptions="actionSearch"/>
-
-            <ImageButton
-                android:id="@+id/btnClearSearch"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:src="@android:drawable/ic_menu_close_clear_cancel"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="Clear search"/>
-
-        </LinearLayout>
-
-        <!-- Loading indicator -->
-        <ProgressBar
-            android:id="@+id/progressBar"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:visibility="gone"/>
-
-        <!-- Error message -->
-        <TextView
-            android:id="@+id/tvError"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="#FFEBEE"
-            android:textColor="#C62828"
-            android:padding="12dp"
-            android:textSize="14sp"
-            android:visibility="gone"/>
-
-        <!-- Tabs + controls row -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:background="#F5F5F5"
-            android:gravity="center_vertical">
-
+            <!-- Error message -->
             <TextView
-                android:id="@+id/tabInventory"
-                android:layout_width="0dp"
+                android:id="@+id/tvError"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Inventory"
-                android:gravity="center"
-                android:paddingTop="12dp"
-                android:paddingBottom="12dp"
-                android:textSize="14sp"
-                android:textStyle="bold"/>
-
-            <TextView
-                android:id="@+id/tabSales"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Sales"
-                android:gravity="center"
-                android:paddingTop="12dp"
-                android:paddingBottom="12dp"
-                android:textSize="14sp"/>
-
-            <ImageButton
-                android:id="@+id/btnFilter"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:src="@android:drawable/ic_menu_sort_by_size"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:layout_marginEnd="4dp"
-                android:visibility="gone"
-                android:contentDescription="Filter"/>
-
-            <ImageButton
-                android:id="@+id/btnGroupToggle"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:src="@android:drawable/ic_menu_agenda"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:layout_marginEnd="8dp"
-                android:visibility="gone"
-                android:contentDescription="Group"/>
-
-        </LinearLayout>
-
-        <!-- Tab indicator -->
-        <View
-            android:id="@+id/tabIndicator"
-            android:layout_width="match_parent"
-            android:layout_height="3dp"
-            android:background="#1976D2"/>
-
-        <!-- Active filters -->
-        <LinearLayout
-            android:id="@+id/llActiveFilters"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:padding="8dp"
-            android:visibility="gone">
-
-            <TextView
-                android:id="@+id/tvActiveFilter"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:textSize="12sp"
-                android:textColor="#1976D2"/>
-
-            <TextView
-                android:id="@+id/tvClearFilter"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Clear"
-                android:textSize="12sp"
+                android:background="#FFEBEE"
                 android:textColor="#C62828"
-                android:paddingStart="8dp"/>
+                android:padding="12dp"
+                android:textSize="14sp"
+                android:visibility="gone"/>
+
+            <!-- Tabs + controls row -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:background="#F5F5F5"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/tabInventory"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Items"
+                    android:gravity="center"
+                    android:paddingTop="12dp"
+                    android:paddingBottom="12dp"
+                    android:textSize="14sp"
+                    android:textStyle="bold"/>
+
+                <TextView
+                    android:id="@+id/tabSales"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Sales"
+                    android:gravity="center"
+                    android:paddingTop="12dp"
+                    android:paddingBottom="12dp"
+                    android:textSize="14sp"/>
+
+                <ImageButton
+                    android:id="@+id/btnFilter"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:src="@android:drawable/ic_menu_sort_by_size"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:layout_marginEnd="4dp"
+                    android:visibility="gone"
+                    android:contentDescription="Filter"/>
+
+                <ImageButton
+                    android:id="@+id/btnGroupToggle"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:src="@android:drawable/ic_menu_agenda"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:layout_marginEnd="8dp"
+                    android:visibility="gone"
+                    android:contentDescription="Group"/>
+
+            </LinearLayout>
+
+            <!-- Tab indicator -->
+            <View
+                android:id="@+id/tabIndicator"
+                android:layout_width="match_parent"
+                android:layout_height="3dp"
+                android:background="#1976D2"/>
+
+            <!-- Active filters -->
+            <LinearLayout
+                android:id="@+id/llActiveFilters"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:padding="8dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/tvActiveFilter"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textSize="12sp"
+                    android:textColor="#1976D2"/>
+
+                <TextView
+                    android:id="@+id/tvClearFilter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Clear"
+                    android:textSize="12sp"
+                    android:textColor="#C62828"
+                    android:paddingStart="8dp"/>
+
+            </LinearLayout>
+
+            <!-- Empty state -->
+            <TextView
+                android:id="@+id/tvEmptyState"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="64dp"
+                android:textSize="16sp"
+                android:textColor="#888888"
+                android:visibility="gone"/>
+
+            <!-- List -->
+            <ListView
+                android:id="@+id/lvItems"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:divider="@null"/>
 
         </LinearLayout>
 
-        <!-- Empty state -->
-        <TextView
-            android:id="@+id/tvEmptyState"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:layout_marginTop="64dp"
-            android:textSize="16sp"
-            android:textColor="#888888"
-            android:visibility="gone"/>
-
-        <!-- List -->
-        <ListView
-            android:id="@+id/lvItems"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:divider="@null"/>
-
-    </LinearLayout>
-
-    <!-- Side panel — simplified -->
-    <LinearLayout
-        android:id="@+id/llSidePanel"
-        android:layout_width="280dp"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:background="#7FF687"
-        android:elevation="8dp"
-        android:visibility="gone">
-
-        <!-- Panel header -->
+        <!-- Side panel — simplified -->
         <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:padding="16dp"
-            android:gravity="center_vertical">
+            android:id="@+id/llSidePanel"
+            android:layout_width="280dp"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:background="#7FF687"
+            android:elevation="8dp"
+            android:visibility="gone">
+
+            <!-- Panel header -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:padding="16dp"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/tvWelcome"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="#000000"/>
+
+                <ImageButton
+                    android:id="@+id/btnClosePanel"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:src="@android:drawable/ic_menu_close_clear_cancel"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Close panel"/>
+
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#00000020"/>
+
+            <!-- Navigation options -->
+            <TextView
+                android:id="@+id/panelTabInventory"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="📦  Items &amp; Sales"
+                android:padding="16dp"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:background="?attr/selectableItemBackground"/>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#00000020"/>
 
             <TextView
-                android:id="@+id/tvWelcome"
-                android:layout_width="0dp"
+                android:id="@+id/panelTabEmployees"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:textColor="#000000"/>
-
-            <ImageButton
-                android:id="@+id/btnClosePanel"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
-                android:src="@android:drawable/ic_menu_close_clear_cancel"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="Close panel"/>
+                android:text="👥  Employees"
+                android:padding="16dp"
+                android:textSize="15sp"
+                android:background="?attr/selectableItemBackground"/>
 
         </LinearLayout>
 
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="#00000020"/>
-
-        <!-- Navigation options -->
-        <TextView
-            android:id="@+id/panelTabInventory"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="📦  Inventory &amp; Sales"
-            android:padding="16dp"
-            android:textSize="15sp"
-            android:textStyle="bold"
-            android:background="?attr/selectableItemBackground"/>
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="#00000020"/>
-
-        <TextView
-            android:id="@+id/panelTabEmployees"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="👥  Employees"
-            android:padding="16dp"
-            android:textSize="15sp"
-            android:background="?attr/selectableItemBackground"/>
-
-    </LinearLayout>
-
-</FrameLayout>
+    </FrameLayout>
+</LinearLayout>
