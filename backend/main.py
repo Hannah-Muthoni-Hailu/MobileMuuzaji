@@ -119,12 +119,12 @@ class UpdateInventoryRequest(BaseModel):
 class SaleModel(BaseModel):
     item_id: int
     quantity_sold: int
+    sale_price: int | None = None
+    update_price: bool = False
 
 class RemoveEmployeeRequest(BaseModel):
     org_id:      int
     employee_id: int
-    sale_price: int | None = None
-    update_price: bool = False
 
 @app.get("/")
 def root():
