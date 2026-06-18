@@ -123,6 +123,8 @@ class SaleModel(BaseModel):
 class RemoveEmployeeRequest(BaseModel):
     org_id:      int
     employee_id: int
+    sale_price: int | None = None
+    update_price: bool = False
 
 @app.get("/")
 def root():
@@ -338,15 +340,13 @@ def update_product(item_id: int, item: UpdateInventoryRequest, db: Session = Dep
     db.refresh(db_item)
     return db_item
 
-@app.post("/sale")
+@app.post("/sale", response_model=SaleResponse)
 def sale(saleitem: SaleModel, db: Session = Depends(get_db)):
     try:
-        # Lock the inventory row for update to prevent race conditions
-        # when multiple sales are processed simultaneously
         inventory_item = (
             db.query(Inventory)
             .filter(Inventory.id == saleitem.item_id)
-            .with_for_update()   # ← row-level lock
+            .with_for_update()
             .first()
         )
 
@@ -356,11 +356,19 @@ def sale(saleitem: SaleModel, db: Session = Depends(get_db)):
         if inventory_item.item_quantity - saleitem.quantity_sold < 1:
             raise HTTPException(status_code=400, detail="Not enough stock")
 
-        # Calculate earnings
-        earnings = inventory_item.cost_per_unit * saleitem.quantity_sold
+        # Use provided sale price or fall back to current cost_per_unit
+        effective_price = saleitem.sale_price if saleitem.sale_price is not None \
+                          else inventory_item.cost_per_unit
+
+        # Calculate earnings using effective price
+        earnings = effective_price * saleitem.quantity_sold
 
         # Deduct from inventory
         inventory_item.item_quantity -= saleitem.quantity_sold
+
+        # Update cost_per_unit if user chose to save the new price
+        if saleitem.update_price and saleitem.sale_price is not None:
+            inventory_item.cost_per_unit = saleitem.sale_price
 
         # Create the sale record
         new_sale = Sales(
@@ -371,8 +379,6 @@ def sale(saleitem: SaleModel, db: Session = Depends(get_db)):
         )
         db.add(new_sale)
 
-        # Commit both changes atomically
-        # If either fails, both are rolled back
         db.commit()
         db.refresh(new_sale)
         db.refresh(inventory_item)
