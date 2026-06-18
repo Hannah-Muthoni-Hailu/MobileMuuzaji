@@ -340,7 +340,7 @@ def update_product(item_id: int, item: UpdateInventoryRequest, db: Session = Dep
     db.refresh(db_item)
     return db_item
 
-@app.post("/sale", response_model=SaleResponse)
+@app.post("/sale")
 def sale(saleitem: SaleModel, db: Session = Depends(get_db)):
     try:
         inventory_item = (
