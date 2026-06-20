@@ -56,7 +56,9 @@ class Inventory(Base):
     item_name = Column(String, nullable=False)
     item_quantity = Column(Integer, nullable=False)
     unit = Column(Enum(Units), nullable=False)
-    cost_per_unit = Column(Integer, nullable=False)
+    buying_price   = Column(Integer, nullable=False)
+    selling_price  = Column(Integer, nullable=False)
+    vat_percentage = Column(Integer, nullable=True)
     org_id = Column(Integer, ForeignKey("organization.id"), nullable=False)
 
     organization = relationship("Organization", back_populates="inv_items")
@@ -68,7 +70,11 @@ class Sales(Base):
     id = Column(Integer, primary_key=True, index=True)
     item_name = Column(String, nullable=False)
     item_quantity = Column(Integer, nullable=False)
-    earnings = Column(Integer, nullable=False)
+    buying_price   = Column(Integer, nullable=False)
+    selling_price  = Column(Integer, nullable=False)
+    gross_income   = Column(Integer, nullable=False)
+    profit         = Column(Integer, nullable=False)
+    vat_amount     = Column(Integer, nullable=True)
     date = Column(DateTime, server_default=func.now())
     org_id = Column(Integer, ForeignKey("organization.id"), nullable=False)
 

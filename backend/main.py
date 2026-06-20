@@ -98,7 +98,9 @@ class InventoryItem(BaseModel):
     name: str
     quantity: int
     unit: Units
-    cost_per_unit: int
+    buying_price:   int
+    selling_price:  int
+    vat_percentage: int | None = None
     org_id: int
 
 class EditInventoryItem(BaseModel):
@@ -113,7 +115,9 @@ class UpdateInventoryRequest(BaseModel):
     item_name: str
     item_quantity: int
     unit: Units
-    cost_per_unit: int
+    buying_price: int
+    selling_price: int
+    vat_percentage: int | None = None
     org_id: int
 
 class SaleModel(BaseModel):
@@ -272,57 +276,22 @@ def newEmployee(employee: EmployeesModel, db: Session = Depends(get_db)):
 def newProduct(product: InventoryItem, db: Session = Depends(get_db)):
     try:
         inventory_item = Inventory(
-            item_name=product.name,
-            item_quantity=product.quantity,
-            unit=product.unit,
-            cost_per_unit=product.cost_per_unit,
-            org_id=product.org_id # Use session handling to obtain this
+            item_name      = product.name,
+            item_quantity  = product.quantity,
+            unit           = product.unit,
+            buying_price   = product.buying_price,
+            selling_price  = product.selling_price,
+            vat_percentage = product.vat_percentage,
+            org_id         = product.org_id
         )
-
         db.add(inventory_item)
         db.commit()
         db.refresh(inventory_item)
-
-        item_result = {
-            "id": inventory_item.id,
-            "item_name": inventory_item.item_name,
-            "item_quantity": inventory_item.item_quantity,
-            "unit": inventory_item.unit,
-            "cost_per_unit": inventory_item.cost_per_unit,
-            "org_id": inventory_item.org_id
-        }
-
-        return item_result
+        return inventory_item
     except Exception as e:
         logger.error(f"Database/Server failure: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal Server error")
 
-@app.post("/edit-product")
-def edit_product(product: EditInventoryItem, db: Session = Depends(get_db)):
-    # Product ID will be sent to frontend for recovery
-    try:
-        inventory_item = db.query(Inventory).filter(Inventory.id == product.item_id).first()
-
-        if product.name is not None: inventory_item.item_name = product.name
-        if product.quantity is not None: inventory_item.item_quantity = product.quantity
-        if product.unit is not None: inventory_item.unit = product.unit
-        if product.cost_per_unit is not None: inventory_item.cost_per_unit = product.cost_per_unit
-
-        db.commit()
-        db.refresh(inventory_item)
-
-        item_result = {
-            "item_name": inventory_item.item_name,
-            "item_quantity": inventory_item.item_quantity,
-            "unit": inventory_item.unit,
-            "cost_per_unit": inventory_item.cost_per_unit,
-            "org_id": inventory_item.org_id
-        }
-
-        return item_result
-    except Exception as e:
-        logger.error(f"Database/Server failure: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal Server error")
 
 @app.put("/update-product/{item_id}")
 def update_product(item_id: int, item: UpdateInventoryRequest, db: Session = Depends(get_db)):
@@ -331,14 +300,17 @@ def update_product(item_id: int, item: UpdateInventoryRequest, db: Session = Dep
     if not db_item:
         raise HTTPException(status_code=404, detail="Item not found")
 
-    db_item.item_name     = item.item_name
-    db_item.item_quantity = item.item_quantity
-    db_item.unit          = item.unit
-    db_item.cost_per_unit = item.cost_per_unit
+    db_item.item_name      = item.item_name
+    db_item.item_quantity  = item.item_quantity
+    db_item.unit           = item.unit
+    db_item.buying_price   = item.buying_price
+    db_item.selling_price  = item.selling_price
+    db_item.vat_percentage = item.vat_percentage
 
     db.commit()
     db.refresh(db_item)
     return db_item
+
 
 @app.post("/sale")
 def sale(saleitem: SaleModel, db: Session = Depends(get_db)):
@@ -356,25 +328,37 @@ def sale(saleitem: SaleModel, db: Session = Depends(get_db)):
         if inventory_item.item_quantity - saleitem.quantity_sold < 1:
             raise HTTPException(status_code=400, detail="Not enough stock")
 
-        # Use provided sale price or fall back to current cost_per_unit
-        effective_price = saleitem.sale_price if saleitem.sale_price is not None \
-                          else inventory_item.cost_per_unit
+        # Use provided sale price or fall back to selling_price
+        effective_selling_price = saleitem.sale_price \
+            if saleitem.sale_price is not None \
+            else inventory_item.selling_price
 
-        # Calculate earnings using effective price
-        earnings = effective_price * saleitem.quantity_sold
+        # Calculate financials
+        gross_income = effective_selling_price * saleitem.quantity_sold
+        cost         = inventory_item.buying_price * saleitem.quantity_sold
+        profit       = gross_income - cost
+
+        # Calculate VAT if applicable
+        vat_amount = None
+        if inventory_item.vat_percentage is not None:
+            vat_amount = int((gross_income * inventory_item.vat_percentage) / 100)
 
         # Deduct from inventory
         inventory_item.item_quantity -= saleitem.quantity_sold
 
-        # Update cost_per_unit if user chose to save the new price
+        # Update selling price if user chose to save it
         if saleitem.update_price and saleitem.sale_price is not None:
-            inventory_item.cost_per_unit = saleitem.sale_price
+            inventory_item.selling_price = saleitem.sale_price
 
         # Create the sale record
         new_sale = Sales(
             item_name     = inventory_item.item_name,
             item_quantity = saleitem.quantity_sold,
-            earnings      = earnings,
+            buying_price  = inventory_item.buying_price,
+            selling_price = effective_selling_price,
+            gross_income  = gross_income,
+            profit        = profit,
+            vat_amount    = vat_amount,
             org_id        = inventory_item.org_id
         )
         db.add(new_sale)
