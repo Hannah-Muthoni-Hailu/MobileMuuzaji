@@ -840,10 +840,16 @@ class OrganizationActivity : AppCompatActivity() {
         val tvCalculatedSold = dialog.findViewById<TextView>(R.id.tvCalculatedSold)
         val btnCancel        = dialog.findViewById<Button>(R.id.btnSellDialogCancel)
         val btnSubmit        = dialog.findViewById<Button>(R.id.btnSellDialogSubmit)
+        val tvCurrentPrice      = dialog.findViewById<TextView>(R.id.tvCurrentPrice)
+        val tvChangePriceToggle = dialog.findViewById<TextView>(R.id.tvChangePriceToggle)
+        val llPriceChange       = dialog.findViewById<LinearLayout>(R.id.llPriceChange)
+        val etNewPrice          = dialog.findViewById<EditText>(R.id.etNewPrice)
+        val cbSavePrice         = dialog.findViewById<CheckBox>(R.id.cbSavePrice)
 
         // Populate title and stock info
         tvSellTitle.text    = "Sell ${item.item_name}"
         tvCurrentStock.text = "Current stock: ${item.item_quantity} ${item.unit}"
+        tvCurrentPrice.text = "Current price: ${item.cost_per_unit} per unit"
 
         // Switch label and show calculated result when radio changes
         rgSellMode.setOnCheckedChangeListener { _, checkedId ->
@@ -883,6 +889,23 @@ class OrganizationActivity : AppCompatActivity() {
                 }
             }
         })
+
+        // Allow for sales price update toggle
+        var priceChangeVisible = false
+
+        tvChangePriceToggle.setOnClickListener {
+            priceChangeVisible = !priceChangeVisible
+            llPriceChange.visibility    = if (priceChangeVisible) View.VISIBLE else View.GONE
+            tvChangePriceToggle.text    = if (priceChangeVisible) "Cancel price change" else "Change price?"
+            tvChangePriceToggle.setTextColor(
+                if (priceChangeVisible) android.graphics.Color.parseColor("#C62828")
+                else android.graphics.Color.parseColor("#1976D2")
+            )
+            if (!priceChangeVisible) {
+                etNewPrice.text.clear()
+                cbSavePrice.isChecked = false
+            }
+        }
 
         btnCancel.setOnClickListener { dialog.dismiss() }
 
@@ -924,11 +947,31 @@ class OrganizationActivity : AppCompatActivity() {
                 }
             }
 
+            // Resolve sale price
+            val newPriceInput = etNewPrice.text.toString().trim()
+            val salePrice: Int?
+            val updatePrice: Boolean
+
+            if (priceChangeVisible && newPriceInput.isNotEmpty()) {
+                val parsedPrice = newPriceInput.toIntOrNull()
+                if (parsedPrice == null || parsedPrice <= 0) {
+                    showDialogErrors(llErrors, listOf("Please enter a valid price"))
+                    return@setOnClickListener
+                }
+                salePrice   = parsedPrice
+                updatePrice = cbSavePrice.isChecked
+            } else {
+                salePrice   = null    // use current cost_per_unit on backend
+                updatePrice = false
+            }
+
             btnSubmit.isEnabled = false
 
             lifecycleScope.launch {
                 // Calculate new inventory quantity after sale
                 val newQuantity = item.item_quantity - quantitySold
+                val effectivePrice     = salePrice ?: item.cost_per_unit
+                val estimatedEarnings  = effectivePrice * quantitySold
 
                 if (NetworkUtils.isOnline(this@OrganizationActivity)) {
                     // Online — send to backend
@@ -937,7 +980,9 @@ class OrganizationActivity : AppCompatActivity() {
                             ApiClient.apiService.makeSale(
                                 SaleRequest(
                                     item_id       = item.id,
-                                    quantity_sold = quantitySold
+                                    quantity_sold = quantitySold,
+                                    sale_price    = salePrice,
+                                    update_price  = updatePrice
                                 )
                             )
                         }
@@ -973,8 +1018,17 @@ class OrganizationActivity : AppCompatActivity() {
                             }
 
                             // Update both in-memory lists
-                            updateInventoryQuantityInList(position, newQuantity)
+                            val updatedItem = item.copy(
+                                item_quantity = newQuantity,
+                                cost_per_unit = if (updatePrice && salePrice != null)
+                                                    salePrice else item.cost_per_unit
+                            )
+                            val updatedList = inventoryItems.toMutableList()
+                            updatedList[position] = updatedItem
+                            inventoryItems = updatedList
+
                             addSaleToList(saleResponse)
+                            refreshList()
                             dialog.dismiss()
 
                         } else {
@@ -1012,7 +1066,9 @@ class OrganizationActivity : AppCompatActivity() {
                                 itemQuantity = quantitySold,
                                 earnings     = 0,      // unknown until synced with backend
                                 orgId        = orgId,
-                                isSynced     = false
+                                isSynced     = false,
+                                salePrice    = salePrice,
+                                updatePrice  = updatePrice
                             )
                         )
                     }
@@ -1020,8 +1076,17 @@ class OrganizationActivity : AppCompatActivity() {
                     SyncManager.scheduleSyncWhenOnline(applicationContext)
 
                     // Update both in-memory lists
-                    updateInventoryQuantityInList(position, newQuantity)
-                    addOfflineSaleToList(item, quantitySold, tempSaleId)
+                    val updatedItem = item.copy(
+                        item_quantity = newQuantity,
+                        cost_per_unit = if (updatePrice && salePrice != null)
+                                            salePrice else item.cost_per_unit
+                    )
+                    val updatedList = inventoryItems.toMutableList()
+                    updatedList[position] = updatedItem
+                    inventoryItems = updatedList
+
+                    addOfflineSaleToList(item.copy(cost_per_unit = effectivePrice), quantitySold, tempSaleId)
+                    refreshList()
                     dialog.dismiss()
                 }
 

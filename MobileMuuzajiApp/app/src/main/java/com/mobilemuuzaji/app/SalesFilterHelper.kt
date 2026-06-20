@@ -41,6 +41,7 @@ object SalesFilterHelper {
         result = when (state.sortBy) {
             "alphabetical" -> result.sortedBy { it.item_name.lowercase() }
             "earnings"     -> result.sortedByDescending { it.earnings }
+            "date"         -> result.sortedByDescending { parseDate(it.date) }
             else           -> result.sortedByDescending { parseDate(it.date) }  // default: newest first
         }
 

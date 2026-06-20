@@ -95,7 +95,9 @@ data class UpdateInventoryRequest(
 
 data class SaleRequest(
     val item_id: Int,
-    val quantity_sold: Int
+    val quantity_sold: Int,
+    val sale_price: Int?    = null,
+    val update_price: Boolean = false
 )
 
 data class SaleResponse(

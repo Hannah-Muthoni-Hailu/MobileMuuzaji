@@ -22,5 +22,7 @@ data class SalesEntity(
     val earnings: Int,
     val date: Long = System.currentTimeMillis(),   // stored as timestamp in SQLite
     val orgId: Int,
-    val isSynced: Boolean = false
+    val isSynced: Boolean = false,
+    val salePrice:            Int?    = null,
+    val updatePrice:          Boolean = false
 )

@@ -112,7 +112,9 @@ class SyncWorker(
                 val response = ApiClient.apiService.makeSale(
                     SaleRequest(
                         item_id       = inventoryItem.id,
-                        quantity_sold = totalQuantitySold
+                        quantity_sold = totalQuantitySold,
+                        sale_price    = sales.first().salePrice,
+                        update_price  = sales.first().updatePrice
                     )
                 )
 
