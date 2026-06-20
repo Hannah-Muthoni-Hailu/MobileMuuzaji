@@ -29,7 +29,7 @@ class GroupedSalesAdapter(
         view.findViewById<TextView>(R.id.tvGroupedItemName).text     = item.item_name
         view.findViewById<TextView>(R.id.tvGroupedSaleCount).text    = "${item.sale_count} sales"
         view.findViewById<TextView>(R.id.tvGroupedTotalQuantity).text = "Total qty: ${item.total_quantity}"
-        view.findViewById<TextView>(R.id.tvGroupedTotalEarnings).text = "Total: ${item.total_earnings}"
+        view.findViewById<TextView>(R.id.tvGroupedTotalEarnings).text = "Total: ${item.total_profit}"
 
         return view
     }

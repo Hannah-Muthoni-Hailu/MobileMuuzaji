@@ -25,11 +25,21 @@ class SalesAdapter(
         val view = convertView ?: LayoutInflater.from(context)
             .inflate(R.layout.item_sale, parent, false)
 
-        val item = allItems[position]
+        val item = filteredItems[position]
 
-        view.findViewById<TextView>(R.id.tvSaleItemName).text  = item.item_name
-        view.findViewById<TextView>(R.id.tvSaleQuantity).text  = "Qty: ${item.item_quantity}"
-        view.findViewById<TextView>(R.id.tvSaleEarnings).text  = "Earnings: ${item.earnings}"
+        view.findViewById<TextView>(R.id.tvSaleItemName).text    = item.item_name
+        view.findViewById<TextView>(R.id.tvSaleQuantity).text    = "Qty: ${item.item_quantity}"
+        view.findViewById<TextView>(R.id.tvSaleDate).text        = item.date
+        view.findViewById<TextView>(R.id.tvSaleGrossIncome).text = "${item.gross_income}"
+        view.findViewById<TextView>(R.id.tvSaleProfit).text      = "${item.profit}"
+
+        val tvVat = view.findViewById<TextView>(R.id.tvSaleVat)
+        if (item.vat_amount != null && item.vat_amount > 0) {
+            tvVat.text       = "VAT: ${item.vat_amount}"
+            tvVat.visibility = View.VISIBLE
+        } else {
+            tvVat.visibility = View.GONE
+        }
 
         return view
     }

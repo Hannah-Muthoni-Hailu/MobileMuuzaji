@@ -17,12 +17,16 @@ import androidx.room.PrimaryKey
 )
 data class SalesEntity(
     @PrimaryKey val id: Int,
-    val itemName: String,
-    val itemQuantity: Int,
-    val earnings: Int,
-    val date: Long = System.currentTimeMillis(),   // stored as timestamp in SQLite
-    val orgId: Int,
-    val isSynced: Boolean = false,
-    val salePrice:            Int?    = null,
-    val updatePrice:          Boolean = false
+    val itemName:       String,
+    val itemQuantity:   Int,
+    val buyingPrice:    Int,
+    val sellingPrice:   Int,
+    val grossIncome:    Int,
+    val profit:         Int,
+    val vatAmount:      Int?   = null,
+    val date:           Long   = System.currentTimeMillis(),
+    val orgId:          Int,
+    val isSynced:       Boolean = false,
+    val salePrice:      Int?   = null,
+    val updatePrice:    Boolean = false
 )

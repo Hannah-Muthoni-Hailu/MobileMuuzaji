@@ -17,10 +17,12 @@ import androidx.room.PrimaryKey
 )
 data class InventoryEntity(
     @PrimaryKey val id: Int,
-    val itemName: String,
-    val itemQuantity: Int,
-    val unit: String,           // stored as string, mapped to Units enum in repository
-    val costPerUnit: Int,
-    val orgId: Int,
-    val isSynced: Boolean = false
+    val itemName:       String,
+    val itemQuantity:   Int,
+    val unit:           String,
+    val buyingPrice:    Int,
+    val sellingPrice:   Int,
+    val vatPercentage:  Int?   = null,
+    val orgId:          Int,
+    val isSynced:       Boolean = false
 )

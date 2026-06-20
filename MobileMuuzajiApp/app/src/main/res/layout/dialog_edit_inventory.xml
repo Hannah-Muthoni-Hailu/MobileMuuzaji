@@ -72,21 +72,53 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"/>
 
-        <!-- Cost per unit -->
+        <!-- Buying price -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Cost Per Unit"
+            android:text="Buying Price (per unit)"
             android:textSize="14sp"
             android:layout_marginBottom="4dp"/>
 
         <EditText
-            android:id="@+id/etEditInventoryCost"
+            android:id="@+id/etBuyingPrice"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Enter cost per unit"
+            android:hint="What you pay per unit"
             android:inputType="number"
-            android:layout_marginBottom="24dp"/>
+            android:layout_marginBottom="16dp"/>
+
+        <!-- Selling price -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Selling Price (per unit)"
+            android:textSize="14sp"
+            android:layout_marginBottom="4dp"/>
+
+        <EditText
+            android:id="@+id/etSellingPrice"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="What you charge per unit"
+            android:inputType="number"
+            android:layout_marginBottom="16dp"/>
+
+        <!-- VAT — optional -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="VAT % (optional)"
+            android:textSize="14sp"
+            android:layout_marginBottom="4dp"/>
+
+        <EditText
+            android:id="@+id/etVatPercentage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="e.g. 16 for 16% VAT — leave blank if none"
+            android:inputType="number"
+            android:layout_marginBottom="16dp"/>
 
         <!-- Buttons -->
         <LinearLayout

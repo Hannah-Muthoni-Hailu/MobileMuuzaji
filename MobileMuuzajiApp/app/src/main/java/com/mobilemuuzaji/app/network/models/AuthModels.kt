@@ -39,19 +39,25 @@ data class NewOrgRequest(
 )
 
 data class InventoryItem(
-    val id:            Int,
-    val item_name:     String,
-    val item_quantity: Int,
-    val unit:          String,
-    val cost_per_unit: Int
+    val id:             Int,
+    val item_name:      String,
+    val item_quantity:  Int,
+    val unit:           String,
+    val buying_price:   Int,
+    val selling_price:  Int,
+    val vat_percentage: Int?   = null
 )
 
 data class SalesItem(
-    val id:            Int,
-    val item_name:     String,
-    val item_quantity: Int,
-    val earnings:      Int,
-    val date:          String
+    val id:           Int,
+    val item_name:    String,
+    val item_quantity:Int,
+    val buying_price: Int,
+    val selling_price:Int,
+    val gross_income: Int,
+    val profit:       Int,
+    val vat_amount:   Int?   = null,
+    val date:         String
 )
 
 data class OrganizationDetails(
@@ -69,11 +75,13 @@ data class OrganizationDetailsResponse(
 )
 
 data class NewInventoryRequest(
-    val name:          String,
-    val quantity:      Int,
-    val unit:          String,
-    val cost_per_unit: Int,
-    val org_id:        Int
+    val name:           String,
+    val quantity:       Int,
+    val unit:           String,
+    val buying_price:   Int,
+    val selling_price:  Int,
+    val vat_percentage: Int?   = null,
+    val org_id:         Int
 )
 
 data class InventoryItemResponse(
@@ -81,16 +89,20 @@ data class InventoryItemResponse(
     val item_name:     String,
     val item_quantity: Int,
     val unit:          String,
-    val cost_per_unit: Int,
+    val buying_price:   Int,
+    val selling_price:  Int,
+    val vat_percentage: Int?   = null,
     val org_id:        Int
 )
 
 data class UpdateInventoryRequest(
-    val item_name:     String,
-    val item_quantity: Int,
-    val unit:          String,
-    val cost_per_unit: Int,
-    val org_id:        Int
+    val item_name:      String,
+    val item_quantity:  Int,
+    val unit:           String,
+    val buying_price:   Int,
+    val selling_price:  Int,
+    val vat_percentage: Int?   = null,
+    val org_id:         Int
 )
 
 data class SaleRequest(
@@ -101,19 +113,25 @@ data class SaleRequest(
 )
 
 data class SaleResponse(
-    val id: Int,
-    val item_name: String,
+    val id:            Int,
+    val item_name:     String,
     val item_quantity: Int,
-    val date: String,
-    val earnings: Int,
-    val org_id: Int
+    val buying_price:  Int,           // ← new
+    val selling_price: Int,           // ← new
+    val gross_income:  Int,           // ← new
+    val profit:        Int,           // ← new
+    val vat_amount:    Int?   = null, // ← new
+    val date:          String,
+    val org_id:        Int
 )
 
 data class GroupedSaleItem(
-    val item_name:      String,
-    val total_quantity: Int,
-    val total_earnings: Int,
-    val sale_count:     Int
+    val item_name:       String,
+    val total_quantity:  Int,
+    val total_gross:     Int,
+    val total_profit:    Int,
+    val total_vat:       Int,
+    val sale_count:      Int
 )
 
 data class NewEmployeeRequest(

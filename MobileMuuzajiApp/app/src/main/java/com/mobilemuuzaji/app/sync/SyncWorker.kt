@@ -37,7 +37,9 @@ class SyncWorker(
                             name          = item.itemName,
                             quantity      = item.itemQuantity,
                             unit          = item.unit,
-                            cost_per_unit = item.costPerUnit,
+                            buying_price   = item.buyingPrice,
+                            selling_price  = item.sellingPrice,
+                            vat_percentage = item.vatPercentage,
                             org_id        = item.orgId
                         )
                     )
@@ -64,7 +66,9 @@ class SyncWorker(
                             item_name     = item.itemName,
                             item_quantity = item.itemQuantity,
                             unit          = item.unit,
-                            cost_per_unit = item.costPerUnit,
+                            buying_price   = item.buyingPrice,
+                            selling_price  = item.sellingPrice,
+                            vat_percentage = item.vatPercentage,
                             org_id        = item.orgId
                         )
                     )
@@ -131,7 +135,11 @@ class SyncWorker(
                         sales.first().copy(
                             id           = serverSale.id,
                             itemQuantity = totalQuantitySold,
-                            earnings     = serverSale.earnings,
+                            buyingPrice  = serverSale.buying_price,    // ← new
+                            sellingPrice = serverSale.selling_price,   // ← new
+                            grossIncome  = serverSale.gross_income,    // ← new
+                            profit       = serverSale.profit,          // ← new
+                            vatAmount    = serverSale.vat_amount,      // ← new
                             isSynced     = true
                         )
                     )

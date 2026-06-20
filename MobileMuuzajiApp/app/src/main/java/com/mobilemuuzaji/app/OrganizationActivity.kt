@@ -251,7 +251,9 @@ class OrganizationActivity : AppCompatActivity() {
                         item_name     = entity.itemName,
                         item_quantity = entity.itemQuantity,
                         unit          = entity.unit,
-                        cost_per_unit = entity.costPerUnit
+                        buying_price  = entity.buyingPrice,    // ← was costPerUnit
+                        selling_price = entity.sellingPrice,   // ← was costPerUnit
+                        vat_percentage = entity.vatPercentage  // ← new
                     )
                 }
 
@@ -260,7 +262,11 @@ class OrganizationActivity : AppCompatActivity() {
                         id            = entity.id,
                         item_name     = entity.itemName,
                         item_quantity = entity.itemQuantity,
-                        earnings      = entity.earnings,
+                        buying_price  = entity.buyingPrice,    // ← new
+                        selling_price = entity.sellingPrice,   // ← new
+                        gross_income  = entity.grossIncome,    // ← new
+                        profit        = entity.profit,         // ← new
+                        vat_amount    = entity.vatAmount,      // ← new
                         date          = entity.date.toString()
                     )
                 }
@@ -393,13 +399,15 @@ class OrganizationActivity : AppCompatActivity() {
         items.forEach { item ->
             inventoryRepository.saveInventoryItem(
                 InventoryEntity(
-                    id           = item.id,
-                    itemName     = item.item_name,
-                    itemQuantity = item.item_quantity,
-                    unit         = item.unit,
-                    costPerUnit  = item.cost_per_unit,
-                    orgId        = orgId,
-                    isSynced     = true    // came from server so already synced
+                    id            = item.id,
+                    itemName      = item.item_name,
+                    itemQuantity  = item.item_quantity,
+                    unit          = item.unit,
+                    buyingPrice   = item.buying_price,   // ← new
+                    sellingPrice  = item.selling_price,  // ← renamed
+                    vatPercentage = item.vat_percentage, // ← new
+                    orgId         = orgId,
+                    isSynced      = true
                 )
             )
         }
@@ -412,7 +420,11 @@ class OrganizationActivity : AppCompatActivity() {
                     id           = item.id,
                     itemName     = item.item_name,
                     itemQuantity = item.item_quantity,
-                    earnings     = item.earnings,
+                    buyingPrice  = item.buying_price,    // ← new
+                    sellingPrice = item.selling_price,   // ← new
+                    grossIncome  = item.gross_income,    // ← new
+                    profit       = item.profit,          // ← new
+                    vatAmount    = item.vat_amount,      // ← new
                     orgId        = orgId,
                     isSynced     = true
                 )
@@ -501,7 +513,9 @@ class OrganizationActivity : AppCompatActivity() {
         val etName          = dialog.findViewById<EditText>(R.id.etInventoryName)
         val etQuantity      = dialog.findViewById<EditText>(R.id.etInventoryQuantity)
         val spinnerUnit     = dialog.findViewById<Spinner>(R.id.spinnerUnit)
-        val etCost          = dialog.findViewById<EditText>(R.id.etInventoryCost)
+        val etBuyingPrice   = dialog.findViewById<EditText>(R.id.etBuyingPrice)
+        val etSellingPrice  = dialog.findViewById<EditText>(R.id.etSellingPrice)
+        val etVatPercentage = dialog.findViewById<EditText>(R.id.etVatPercentage)
         val btnCancel       = dialog.findViewById<Button>(R.id.btnInventoryDialogCancel)
         val btnSubmit       = dialog.findViewById<Button>(R.id.btnInventoryDialogSubmit)
 
@@ -520,13 +534,21 @@ class OrganizationActivity : AppCompatActivity() {
             val name     = etName.text.toString().trim()
             val quantity = etQuantity.text.toString().trim()
             val unit     = spinnerUnit.selectedItem.toString()
-            val cost     = etCost.text.toString().trim()
+            val buyingPrice  = etBuyingPrice.text.toString().trim()
+            val sellingPrice = etSellingPrice.text.toString().trim()
+            val vatInput     = etVatPercentage.text.toString().trim()
 
             // Client side validation
             val errors = mutableListOf<String>()
             if (name.isEmpty())     errors.add("Item name is required")
             if (quantity.isEmpty()) errors.add("Quantity is required")
-            if (cost.isEmpty())     errors.add("Cost per unit is required")
+            if (buyingPrice.isEmpty())  errors.add("Buying price is required")
+            if (sellingPrice.isEmpty()) errors.add("Selling price is required")
+            if (buyingPrice.isNotEmpty() && sellingPrice.isNotEmpty()) {
+                if (sellingPrice.toInt() < buyingPrice.toInt()) {
+                    errors.add("Selling price should not be lower than buying price")
+                }
+            }
 
             if (errors.isNotEmpty()) {
                 showDialogErrors(llErrors, errors)
@@ -539,7 +561,9 @@ class OrganizationActivity : AppCompatActivity() {
                 name          = name,
                 quantity      = quantity.toInt(),
                 unit          = unit,
-                cost_per_unit = cost.toInt(),
+                buying_price   = buyingPrice.toInt(),
+                selling_price  = sellingPrice.toInt(),
+                vat_percentage = if (vatInput.isEmpty()) null else vatInput.toInt(),
                 org_id        = orgId
             )
 
@@ -562,7 +586,9 @@ class OrganizationActivity : AppCompatActivity() {
                                         itemName     = createdItem.item_name,
                                         itemQuantity = createdItem.item_quantity,
                                         unit         = createdItem.unit,
-                                        costPerUnit  = createdItem.cost_per_unit,
+                                        buyingPrice   = createdItem.buying_price,    // ← was costPerUnit
+                                        sellingPrice  = createdItem.selling_price,   // ← was costPerUnit
+                                        vatPercentage = createdItem.vat_percentage,  // ← new
                                         orgId        = orgId,
                                         isSynced     = true
                                     )
@@ -577,7 +603,9 @@ class OrganizationActivity : AppCompatActivity() {
                                     item_name     = createdItem.item_name,
                                     item_quantity = createdItem.item_quantity,
                                     unit          = createdItem.unit,
-                                    cost_per_unit = createdItem.cost_per_unit
+                                    buying_price   = createdItem.buying_price,    // ← new
+                                    selling_price  = createdItem.selling_price,   // ← new
+                                    vat_percentage = createdItem.vat_percentage   // ← new
                                 )
                             )
                             inventoryItems = updatedList
@@ -605,7 +633,9 @@ class OrganizationActivity : AppCompatActivity() {
                                 itemName     = name,
                                 itemQuantity = quantity.toInt(),
                                 unit         = unit,
-                                costPerUnit  = cost.toInt(),
+                                buyingPrice   = buyingPrice.toInt(),   // ← was costPerUnit
+                                sellingPrice  = sellingPrice.toInt(),  // ← was costPerUnit
+                                vatPercentage = if (vatInput.isEmpty()) null else vatInput.toInt(),  // ← new
                                 orgId        = orgId,
                                 isSynced     = false    // will be synced when online
                             )
@@ -622,7 +652,9 @@ class OrganizationActivity : AppCompatActivity() {
                             item_name     = name,
                             item_quantity = quantity.toInt(),
                             unit          = unit,
-                            cost_per_unit = cost.toInt()
+                            buying_price   = buyingPrice.toInt(),   // ← new
+                            selling_price  = sellingPrice.toInt(),  // ← new
+                            vat_percentage = if (vatInput.isEmpty()) null else vatInput.toInt()  // ← new
                         )
                     )
                     inventoryItems = updatedList
@@ -661,7 +693,9 @@ class OrganizationActivity : AppCompatActivity() {
         val etName      = dialog.findViewById<EditText>(R.id.etEditInventoryName)
         val etQuantity  = dialog.findViewById<EditText>(R.id.etEditInventoryQuantity)
         val spinnerUnit = dialog.findViewById<Spinner>(R.id.spinnerEditUnit)
-        val etCost      = dialog.findViewById<EditText>(R.id.etEditInventoryCost)
+        val etBuyingPrice   = dialog.findViewById<EditText>(R.id.etBuyingPrice)
+        val etSellingPrice  = dialog.findViewById<EditText>(R.id.etSellingPrice)
+        val etVatPercentage = dialog.findViewById<EditText>(R.id.etVatPercentage)
         val btnCancel   = dialog.findViewById<Button>(R.id.btnEditInventoryDialogCancel)
         val btnSubmit   = dialog.findViewById<Button>(R.id.btnEditInventoryDialogSubmit)
 
@@ -677,7 +711,9 @@ class OrganizationActivity : AppCompatActivity() {
         // Pre-populate fields with existing item data
         etName.setText(item.item_name)
         etQuantity.setText(item.item_quantity.toString())
-        etCost.setText(item.cost_per_unit.toString())
+        etBuyingPrice.setText(item.buying_price.toString())
+        etSellingPrice.setText(item.selling_price.toString())
+        etVatPercentage.setText(item.vat_percentage?.toString() ?: "")
 
         // Pre-select the current unit in the spinner
         val unitIndex = UNIT_OPTIONS.indexOf(item.unit)
@@ -689,13 +725,21 @@ class OrganizationActivity : AppCompatActivity() {
             val name     = etName.text.toString().trim()
             val quantity = etQuantity.text.toString().trim()
             val unit     = spinnerUnit.selectedItem.toString()
-            val cost     = etCost.text.toString().trim()
+            val buyingPrice  = etBuyingPrice.text.toString().trim()
+            val sellingPrice = etSellingPrice.text.toString().trim()
+            val vatInput     = etVatPercentage.text.toString().trim()
 
             // Validation
             val errors = mutableListOf<String>()
             if (name.isEmpty())     errors.add("Item name is required")
             if (quantity.isEmpty()) errors.add("Quantity is required")
-            if (cost.isEmpty())     errors.add("Cost per unit is required")
+            if (buyingPrice.isEmpty())  errors.add("Buying price is required")
+            if (sellingPrice.isEmpty()) errors.add("Selling price is required")
+            if (buyingPrice.isNotEmpty() && sellingPrice.isNotEmpty()) {
+                if (sellingPrice.toInt() < buyingPrice.toInt()) {
+                    errors.add("Selling price should not be lower than buying price")
+                }
+            }
 
             if (errors.isNotEmpty()) {
                 showDialogErrors(llErrors, errors)
@@ -715,7 +759,9 @@ class OrganizationActivity : AppCompatActivity() {
                                     item_name     = name,
                                     item_quantity = quantity.toInt(),
                                     unit          = unit,
-                                    cost_per_unit = cost.toInt(),
+                                    buying_price  = buyingPrice.toInt(),
+                                    selling_price = sellingPrice.toInt(),
+                                    vat_percentage = if (vatInput.isEmpty()) null else vatInput.toInt(),  // ← new
                                     org_id        = orgId
                                 )
                             )
@@ -732,7 +778,9 @@ class OrganizationActivity : AppCompatActivity() {
                                         itemName     = updatedItem.item_name,
                                         itemQuantity = updatedItem.item_quantity,
                                         unit         = updatedItem.unit,
-                                        costPerUnit  = updatedItem.cost_per_unit,
+                                        buyingPrice   = updatedItem.buying_price,    // ← new
+                                        sellingPrice  = updatedItem.selling_price,   // ← new
+                                        vatPercentage = updatedItem.vat_percentage,  // ← new
                                         orgId        = orgId,
                                         isSynced     = true
                                     )
@@ -746,7 +794,9 @@ class OrganizationActivity : AppCompatActivity() {
                                 item_name     = updatedItem.item_name,
                                 item_quantity = updatedItem.item_quantity,
                                 unit          = updatedItem.unit,
-                                cost_per_unit = updatedItem.cost_per_unit
+                                buying_price   = updatedItem.buying_price,
+                                selling_price  = updatedItem.selling_price,
+                                vat_percentage = updatedItem.vat_percentage
                             )
 
                             dialog.dismiss()
@@ -769,7 +819,9 @@ class OrganizationActivity : AppCompatActivity() {
                                 itemName     = name,
                                 itemQuantity = quantity.toInt(),
                                 unit         = unit,
-                                costPerUnit  = cost.toInt(),
+                                buyingPrice   = buyingPrice.toInt(),    // ← new
+                                sellingPrice  = sellingPrice.toInt(),   // ← new
+                                vatPercentage = if (vatInput.isEmpty()) null else vatInput.toInt(),  // ← new
                                 orgId        = orgId,
                                 isSynced     = false    // will sync when online
                             )
@@ -785,7 +837,9 @@ class OrganizationActivity : AppCompatActivity() {
                         item_name     = name,
                         item_quantity = quantity.toInt(),
                         unit          = unit,
-                        cost_per_unit = cost.toInt()
+                        buying_price   = buyingPrice.toInt(),
+                        selling_price  = sellingPrice.toInt(),
+                        vat_percentage = if (vatInput.isEmpty()) null else vatInput.toInt()
                     )
 
                     dialog.dismiss()
@@ -805,7 +859,9 @@ class OrganizationActivity : AppCompatActivity() {
         item_name:     String,
         item_quantity: Int,
         unit:          String,
-        cost_per_unit: Int
+        buying_price:  Int,
+        selling_price: Int,
+        vat_percentage: Int?
     ) {
         val updatedList = inventoryItems.toMutableList()
         updatedList[position] = InventoryItem(
@@ -813,7 +869,9 @@ class OrganizationActivity : AppCompatActivity() {
             item_name     = item_name,
             item_quantity = item_quantity,
             unit          = unit,
-            cost_per_unit = cost_per_unit
+            buying_price   = buying_price,
+            selling_price  = selling_price,
+            vat_percentage = vat_percentage
         )
         inventoryItems = updatedList
         refreshList()
@@ -849,7 +907,7 @@ class OrganizationActivity : AppCompatActivity() {
         // Populate title and stock info
         tvSellTitle.text    = "Sell ${item.item_name}"
         tvCurrentStock.text = "Current stock: ${item.item_quantity} ${item.unit}"
-        tvCurrentPrice.text = "Current price: ${item.cost_per_unit} per unit"
+        tvCurrentPrice.text = "Current price: ${item.selling_price} per unit"
 
         // Switch label and show calculated result when radio changes
         rgSellMode.setOnCheckedChangeListener { _, checkedId ->
@@ -961,7 +1019,7 @@ class OrganizationActivity : AppCompatActivity() {
                 salePrice   = parsedPrice
                 updatePrice = cbSavePrice.isChecked
             } else {
-                salePrice   = null    // use current cost_per_unit on backend
+                salePrice   = null
                 updatePrice = false
             }
 
@@ -970,8 +1028,9 @@ class OrganizationActivity : AppCompatActivity() {
             lifecycleScope.launch {
                 // Calculate new inventory quantity after sale
                 val newQuantity = item.item_quantity - quantitySold
-                val effectivePrice     = salePrice ?: item.cost_per_unit
+                val effectivePrice     = salePrice ?: item.selling_price
                 val estimatedEarnings  = effectivePrice * quantitySold
+                val estimatedProfit    = (effectivePrice - item.buying_price) * quantitySold
 
                 if (NetworkUtils.isOnline(this@OrganizationActivity)) {
                     // Online — send to backend
@@ -998,7 +1057,10 @@ class OrganizationActivity : AppCompatActivity() {
                                         itemName     = item.item_name,
                                         itemQuantity = newQuantity,
                                         unit         = item.unit,
-                                        costPerUnit  = item.cost_per_unit,
+                                        buyingPrice   = item.buying_price,
+                                        sellingPrice  = if (updatePrice && salePrice != null)
+                                                            salePrice else item.selling_price,
+                                        vatPercentage = item.vat_percentage,  // ← new
                                         orgId        = orgId,
                                         isSynced     = true
                                     )
@@ -1010,7 +1072,11 @@ class OrganizationActivity : AppCompatActivity() {
                                         id           = saleResponse.id,
                                         itemName     = saleResponse.item_name,
                                         itemQuantity = saleResponse.item_quantity,
-                                        earnings     = saleResponse.earnings,
+                                        buyingPrice  = saleResponse.buying_price,    // ← new
+                                        sellingPrice = saleResponse.selling_price,   // ← new
+                                        grossIncome  = saleResponse.gross_income,    // ← new
+                                        profit       = saleResponse.profit,          // ← new
+                                        vatAmount    = saleResponse.vat_amount,      // ← new
                                         orgId        = orgId,
                                         isSynced     = true
                                     )
@@ -1020,8 +1086,8 @@ class OrganizationActivity : AppCompatActivity() {
                             // Update both in-memory lists
                             val updatedItem = item.copy(
                                 item_quantity = newQuantity,
-                                cost_per_unit = if (updatePrice && salePrice != null)
-                                                    salePrice else item.cost_per_unit
+                                selling_price = if (updatePrice && salePrice != null)
+                                                    salePrice else item.selling_price
                             )
                             val updatedList = inventoryItems.toMutableList()
                             updatedList[position] = updatedItem
@@ -1052,7 +1118,10 @@ class OrganizationActivity : AppCompatActivity() {
                                 itemName     = item.item_name,
                                 itemQuantity = newQuantity,
                                 unit         = item.unit,
-                                costPerUnit  = item.cost_per_unit,
+                                buyingPrice   = item.buying_price,    // ← new
+                                sellingPrice  = if (updatePrice && salePrice != null)
+                                                    salePrice else item.selling_price,  // ← new
+                                vatPercentage = item.vat_percentage,  // ← new
                                 orgId        = orgId,
                                 isSynced     = false
                             )
@@ -1064,7 +1133,13 @@ class OrganizationActivity : AppCompatActivity() {
                                 id           = tempSaleId,
                                 itemName     = item.item_name,
                                 itemQuantity = quantitySold,
-                                earnings     = 0,      // unknown until synced with backend
+                                buyingPrice  = item.buying_price,
+                                sellingPrice = effectivePrice,
+                                grossIncome  = estimatedEarnings,
+                                profit       = estimatedProfit,
+                                vatAmount    = if (item.vat_percentage != null)
+                                                (estimatedEarnings * item.vat_percentage) / 100
+                                            else null,
                                 orgId        = orgId,
                                 isSynced     = false,
                                 salePrice    = salePrice,
@@ -1078,14 +1153,14 @@ class OrganizationActivity : AppCompatActivity() {
                     // Update both in-memory lists
                     val updatedItem = item.copy(
                         item_quantity = newQuantity,
-                        cost_per_unit = if (updatePrice && salePrice != null)
-                                            salePrice else item.cost_per_unit
+                        selling_price = if (updatePrice && salePrice != null)
+                                            salePrice else item.selling_price
                     )
                     val updatedList = inventoryItems.toMutableList()
                     updatedList[position] = updatedItem
                     inventoryItems = updatedList
 
-                    addOfflineSaleToList(item.copy(cost_per_unit = effectivePrice), quantitySold, tempSaleId)
+                    addOfflineSaleToList(item.copy(selling_price = effectivePrice), quantitySold, tempSaleId)
                     refreshList()
                     dialog.dismiss()
                 }
@@ -1120,12 +1195,16 @@ class OrganizationActivity : AppCompatActivity() {
     // Add a synced sale from server response to the in-memory sales list
     private fun addSaleToList(saleResponse: SaleResponse) {
         val updatedSales = salesItems.toMutableList()
-        updatedSales.add(0,   // add to top since it's the most recent
+        updatedSales.add(0,
             SalesItem(
                 id            = saleResponse.id,
                 item_name     = saleResponse.item_name,
                 item_quantity = saleResponse.item_quantity,
-                earnings      = saleResponse.earnings,
+                buying_price  = saleResponse.buying_price,   // ← new
+                selling_price = saleResponse.selling_price,  // ← new
+                gross_income  = saleResponse.gross_income,   // ← new
+                profit        = saleResponse.profit,         // ← new
+                vat_amount    = saleResponse.vat_amount,     // ← new
                 date          = saleResponse.date
             )
         )
@@ -1134,13 +1213,20 @@ class OrganizationActivity : AppCompatActivity() {
 
     // Add an offline sale to the in-memory sales list
     private fun addOfflineSaleToList(item: InventoryItem, quantitySold: Int, tempId: Int) {
+        val estimatedEarnings = item.selling_price * quantitySold
+        val estimatedProfit   = (item.selling_price - item.buying_price) * quantitySold
+
         val updatedSales = salesItems.toMutableList()
         updatedSales.add(0,
             SalesItem(
                 id            = tempId,
                 item_name     = item.item_name,
                 item_quantity = quantitySold,
-                earnings      = 0,       // unknown until synced
+                buying_price  = item.buying_price,    // ← new
+                selling_price = item.selling_price,   // ← new
+                gross_income  = estimatedEarnings,    // ← new
+                profit        = estimatedProfit,      // ← new
+                vat_amount    = null,
                 date          = "Pending sync"
             )
         )

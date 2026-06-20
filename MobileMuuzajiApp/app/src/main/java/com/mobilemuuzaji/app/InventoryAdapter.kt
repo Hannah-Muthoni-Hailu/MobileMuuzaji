@@ -30,13 +30,16 @@ class InventoryAdapter(
         val view = convertView ?: LayoutInflater.from(context)
             .inflate(R.layout.item_inventory, parent, false)
 
-        val item = allItems[position]
+        val item = filteredItems[position]
         val btnSell = view.findViewById<Button>(R.id.btnSell)
         val btnEdit = view.findViewById<Button>(R.id.btnEdit)
 
         view.findViewById<TextView>(R.id.tvItemName).text     = item.item_name
         view.findViewById<TextView>(R.id.tvItemQuantity).text = "Qty: ${item.item_quantity} ${item.unit}"
-        view.findViewById<TextView>(R.id.tvItemCost).text     = "Cost: ${item.cost_per_unit} per unit"
+        view.findViewById<TextView>(R.id.tvItemCost).text     = "Buy: ${item.buying_price} · Sell: ${item.selling_price} per unit"
+        val tvItemCost = view.findViewById<TextView>(R.id.tvItemCost)
+        val vatText    = if (item.vat_percentage != null) " · VAT ${item.vat_percentage}%" else ""
+        tvItemCost.text = "Buy: ${item.buying_price} · Sell: ${item.selling_price}$vatText per unit"
 
         btnSell.setOnClickListener {
             onSellClick(item, position)

@@ -40,7 +40,7 @@ object SalesFilterHelper {
         // Apply sort
         result = when (state.sortBy) {
             "alphabetical" -> result.sortedBy { it.item_name.lowercase() }
-            "earnings"     -> result.sortedByDescending { it.earnings }
+            "earnings"     -> result.sortedByDescending { it.profit }
             "date"         -> result.sortedByDescending { parseDate(it.date) }
             else           -> result.sortedByDescending { parseDate(it.date) }  // default: newest first
         }
@@ -55,11 +55,13 @@ object SalesFilterHelper {
                 GroupedSaleItem(
                     item_name      = name,
                     total_quantity = sales.sumOf { it.item_quantity },
-                    total_earnings = sales.sumOf { it.earnings },
+                    total_gross    = sales.sumOf { it.gross_income },
+                    total_profit   = sales.sumOf { it.profit },
+                    total_vat      = sales.sumOf { it.vat_amount ?: 0 },
                     sale_count     = sales.size
                 )
             }
-            .sortedByDescending { it.total_earnings }  // grouped view always sorts by total earnings
+            .sortedByDescending { it.total_profit }  // grouped view always sorts by total earnings
     }
 
     private fun parseDate(dateStr: String): Long {

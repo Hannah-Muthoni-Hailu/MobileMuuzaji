@@ -184,13 +184,15 @@ class AuthActivity : AppCompatActivity() {
                     org.inv_items.forEach { item ->
                         inventoryRepo.saveInventoryItem(
                             InventoryEntity(
-                                id           = item.id,
-                                itemName     = item.item_name,
-                                itemQuantity = item.item_quantity,
-                                unit         = item.unit,
-                                costPerUnit  = item.cost_per_unit,
-                                orgId        = org.id,
-                                isSynced     = true
+                                id            = item.id,
+                                itemName      = item.item_name,
+                                itemQuantity  = item.item_quantity,
+                                unit          = item.unit,
+                                buyingPrice   = item.buying_price,   // ← new
+                                sellingPrice  = item.selling_price,  // ← renamed
+                                vatPercentage = item.vat_percentage, // ← new
+                                orgId         = org.id,
+                                isSynced      = true
                             )
                         )
                     }
@@ -202,7 +204,11 @@ class AuthActivity : AppCompatActivity() {
                                 id           = sale.id,
                                 itemName     = sale.item_name,
                                 itemQuantity = sale.item_quantity,
-                                earnings     = sale.earnings,
+                                buyingPrice  = sale.buying_price,    // ← new
+                                sellingPrice = sale.selling_price,   // ← new
+                                grossIncome  = sale.gross_income,    // ← new
+                                profit       = sale.profit,          // ← new
+                                vatAmount    = sale.vat_amount,      // ← new
                                 orgId        = org.id,
                                 isSynced     = true
                             )
