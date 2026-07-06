@@ -93,6 +93,7 @@ class Units(str, Enum):
     gallon      = str(ureg.gallon)
     fluid_ounce = str(ureg.fluid_ounce)
     cup         = str(ureg.cup)
+    item        = "item"
 
 class InventoryItem(BaseModel):
     name: str

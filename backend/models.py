@@ -17,6 +17,7 @@ class Units(enum.Enum):
     gallon      = str(ureg.gallon)
     fluid_ounce = str(ureg.fluid_ounce)
     cup         = str(ureg.cup)
+    item        = "item"
 
 organization_employees = Table(
     "organization_employees",
