@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Table, Enum, DateTime, func
+from sqlalchemy import Column, Integer, String, ForeignKey, Table, DateTime, func
 from sqlalchemy.orm import relationship
 from database import Base
 import enum
@@ -56,7 +56,7 @@ class Inventory(Base):
     id = Column(Integer, primary_key=True, index=True)
     item_name = Column(String, nullable=False)
     item_quantity = Column(Integer, nullable=False)
-    unit = Column(Enum(Units), nullable=False)
+    unit = Column(String, nullable=False)
     buying_price   = Column(Integer, nullable=False)
     selling_price  = Column(Integer, nullable=False)
     vat_percentage = Column(Integer, nullable=True)

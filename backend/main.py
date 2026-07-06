@@ -4,7 +4,7 @@ bcrypt.__about__ = bcrypt
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from database import Base, engine, get_db
+from database import Base, engine, get_db, ensure_inventory_unit_column_is_text
 from models import User, Organization, Inventory, Sales
 from pydantic import BaseModel, EmailStr, field_validator, model_validator
 from enum import Enum
@@ -14,6 +14,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # Create tables
+ensure_inventory_unit_column_is_text()
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
