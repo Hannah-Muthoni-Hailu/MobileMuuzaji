@@ -25,4 +25,8 @@ data class InventoryEntity(
     val vatPercentage:  Int?   = null,
     val orgId:          Int,
     val isSynced:       Boolean = false
-)
+) {
+    companion object {
+        const val UNIT_ITEM = "item"
+    }
+}
