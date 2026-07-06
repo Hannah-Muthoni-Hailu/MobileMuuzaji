@@ -84,7 +84,7 @@
             android:id="@+id/etBuyingPrice"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="What you pay per unit"
+            android:hint="What you paid for it/unit"
             android:inputType="number"
             android:layout_marginBottom="16dp"/>
 

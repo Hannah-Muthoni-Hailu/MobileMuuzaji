@@ -18,11 +18,11 @@ class UserRepository(private val userDao: UserDao) {
     }
 
     suspend fun saveUser(user: UserEntity) {
-        userDao.insertUser(user.copy(isSynced = false))
+        userDao.insertUser(user)
     }
 
     suspend fun updateUser(user: UserEntity) {
-        userDao.updateUser(user.copy(isSynced = false))
+        userDao.updateUser(user)
     }
 
     suspend fun deleteUser(user: UserEntity) {

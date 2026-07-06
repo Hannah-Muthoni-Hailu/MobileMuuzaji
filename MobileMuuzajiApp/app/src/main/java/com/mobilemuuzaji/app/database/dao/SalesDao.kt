@@ -19,4 +19,7 @@ interface SalesDao {
 
     @Query("SELECT * FROM sales WHERE isSynced = 0")
     suspend fun getUnsyncedSales(): List<SalesEntity>
+
+    @Query("SELECT * FROM sales WHERE id = :id")
+    suspend fun getSaleById(id: Int): SalesEntity?
 }

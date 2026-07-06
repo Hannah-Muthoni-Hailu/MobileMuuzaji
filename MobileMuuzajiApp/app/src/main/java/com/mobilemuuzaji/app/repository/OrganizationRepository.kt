@@ -20,11 +20,11 @@ class OrganizationRepository(private val organizationDao: OrganizationDao) {
     }
 
     suspend fun saveOrganization(organization: OrganizationEntity) {
-        organizationDao.insertOrganization(organization.copy(isSynced = false))
+        organizationDao.insertOrganization(organization)
     }
 
     suspend fun updateOrganization(organization: OrganizationEntity) {
-        organizationDao.updateOrganization(organization.copy(isSynced = false))
+        organizationDao.updateOrganization(organization)
     }
 
     suspend fun deleteOrganization(organization: OrganizationEntity) {

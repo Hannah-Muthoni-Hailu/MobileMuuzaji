@@ -14,11 +14,11 @@ class InventoryRepository(private val inventoryDao: InventoryDao) {
     }
 
     suspend fun saveInventoryItem(item: InventoryEntity) {
-        inventoryDao.insertInventoryItem(item.copy(isSynced = false))
+        inventoryDao.insertInventoryItem(item)
     }
 
     suspend fun updateInventoryItem(item: InventoryEntity) {
-        inventoryDao.updateInventoryItem(item.copy(isSynced = false))
+        inventoryDao.updateInventoryItem(item)
     }
 
     suspend fun deleteInventoryItem(item: InventoryEntity) {

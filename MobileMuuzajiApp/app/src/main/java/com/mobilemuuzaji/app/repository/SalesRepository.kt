@@ -14,7 +14,7 @@ class SalesRepository(private val salesDao: SalesDao) {
     }
 
     suspend fun saveSale(sale: SalesEntity) {
-        salesDao.insertSale(sale.copy(isSynced = false))
+        salesDao.insertSale(sale)
     }
 
     suspend fun deleteSale(sale: SalesEntity) {
@@ -27,5 +27,9 @@ class SalesRepository(private val salesDao: SalesDao) {
 
     suspend fun markAsSynced(sale: SalesEntity) {
         salesDao.insertSale(sale.copy(isSynced = true))
+    }
+
+    suspend fun getSaleById(id: Int): SalesEntity? {
+        return salesDao.getSaleById(id)
     }
 }

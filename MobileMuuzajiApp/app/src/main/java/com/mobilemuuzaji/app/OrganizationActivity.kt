@@ -231,7 +231,34 @@ class OrganizationActivity : AppCompatActivity() {
 
         // If online, fetch fresh data from API and update Room
         if (NetworkUtils.isOnline(this)) {
-            fetchFromApi()
+            lifecycleScope.launch {
+                // Check if there's anything to sync first
+                val hasUnsyncedInventory = withContext(Dispatchers.IO) {
+                    inventoryRepository.getUnsyncedItems().isNotEmpty()
+                }
+                val hasUnsyncedSales = withContext(Dispatchers.IO) {
+                    salesRepository.getUnsyncedSales().isNotEmpty()
+                }
+
+                if (hasUnsyncedInventory || hasUnsyncedSales) {
+                    val sales = withContext(Dispatchers.IO) {
+                        salesRepository.getUnsyncedSales()
+                    }
+
+                    Log.d("ORG_DEBUG", "Unsynced sales before scheduling:")
+                    sales.forEach {
+                        Log.d(
+                            "ORG_DEBUG",
+                            "id=${it.id}, item=${it.itemName}, qty=${it.itemQuantity}, synced=${it.isSynced}"
+                        )
+                    }
+                    // Sync first, then fetch will happen on next app open
+                    SyncManager.scheduleSyncWhenOnline(applicationContext)
+                } else {
+                    // Nothing to sync — safe to fetch fresh data
+                    fetchFromApi()
+                }
+            }
         }
 
         setupSidePanel()
@@ -397,6 +424,9 @@ class OrganizationActivity : AppCompatActivity() {
 
     private suspend fun saveInventoryToRoom(items: List<InventoryItem>) {
         items.forEach { item ->
+            val existing = inventoryRepository.getInventoryItemById(item.id)
+            if (existing != null && !existing.isSynced) return@forEach
+
             inventoryRepository.saveInventoryItem(
                 InventoryEntity(
                     id            = item.id,
@@ -415,6 +445,10 @@ class OrganizationActivity : AppCompatActivity() {
 
     private suspend fun saveSalesToRoom(items: List<SalesItem>) {
         items.forEach { item ->
+            // Don't overwrite unsynced local sales with server data
+            val existing = salesRepository.getSaleById(item.id)
+            if (existing != null && !existing.isSynced) return@forEach
+            
             salesRepository.saveSale(
                 SalesEntity(
                     id           = item.id,

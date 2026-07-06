@@ -32,10 +32,19 @@ class SyncWorker(
             try {
                 if (item.id < 0) {
                     // Negative id = created offline — POST to backend
+                    val pendingSalesQuantity = salesRepo.getUnsyncedSales()
+                        .filter { it.itemName == item.itemName && it.orgId == item.orgId }
+                        .sumOf { it.itemQuantity }
+
+                    val quantityToCreate = InventorySyncQuantityHelper.quantityToCreateForNewItem(
+                        currentQuantity = item.itemQuantity,
+                        pendingSalesQuantity = pendingSalesQuantity
+                    )
+
                     val response = ApiClient.apiService.createInventoryItem(
                         NewInventoryRequest(
                             name          = item.itemName,
-                            quantity      = item.itemQuantity,
+                            quantity      = quantityToCreate,
                             unit          = item.unit,
                             buying_price   = item.buyingPrice,
                             selling_price  = item.sellingPrice,
@@ -47,24 +56,40 @@ class SyncWorker(
                     if (response.isSuccessful) {
                         val serverItem = response.body()!!
 
-                        // Delete the temp item and save with the real server id
                         inventoryRepo.deleteInventoryItem(item)
                         inventoryRepo.saveInventoryItem(
                             item.copy(id = serverItem.id, isSynced = true)
                         )
                         Log.d("SyncWorker", "Created inventory item synced: ${item.itemName}")
                     } else {
-                        Log.e("SyncWorker", "Failed to sync new item: ${item.itemName}")
-                        allSucceeded = false
+                        val errorBody = response.errorBody()?.string().orEmpty()
+                        val decision = SyncErrorClassifier.classify(response.code(), errorBody)
+                        Log.e("SyncWorker", "Failed to sync new item: ${item.itemName} HTTP ${response.code()}: $errorBody")
+
+                        if (decision.shouldDrop) {
+                            inventoryRepo.deleteInventoryItem(item)
+                            Log.w("SyncWorker", "Dropped permanently failed inventory item: ${item.itemName}")
+                        } else {
+                            allSucceeded = false
+                        }
                     }
 
                 } else {
                     // Positive id = edited offline — PUT to backend
+                    val pendingSalesQuantity = salesRepo.getUnsyncedSales()
+                        .filter { it.itemName == item.itemName && it.orgId == item.orgId }
+                        .sumOf { it.itemQuantity }
+
+                    val quantityToUpdate = InventorySyncQuantityHelper.quantityToCreateForNewItem(
+                        currentQuantity = item.itemQuantity,
+                        pendingSalesQuantity = pendingSalesQuantity
+                    )
+
                     val response = ApiClient.apiService.updateInventoryItem(
                         itemId  = item.id,
                         request = UpdateInventoryRequest(
                             item_name     = item.itemName,
-                            item_quantity = item.itemQuantity,
+                            item_quantity = quantityToUpdate,
                             unit          = item.unit,
                             buying_price   = item.buyingPrice,
                             selling_price  = item.sellingPrice,
@@ -77,8 +102,16 @@ class SyncWorker(
                         inventoryRepo.markAsSynced(item)
                         Log.d("SyncWorker", "Updated inventory item synced: ${item.itemName}")
                     } else {
-                        Log.e("SyncWorker", "Failed to sync updated item: ${item.itemName}")
-                        allSucceeded = false
+                        val errorBody = response.errorBody()?.string().orEmpty()
+                        val decision = SyncErrorClassifier.classify(response.code(), errorBody)
+                        Log.e("SyncWorker", "Failed to sync updated item: ${item.itemName} HTTP ${response.code()}: $errorBody")
+
+                        if (decision.shouldDrop) {
+                            inventoryRepo.deleteInventoryItem(item)
+                            Log.w("SyncWorker", "Dropped permanently failed inventory item: ${item.itemName}")
+                        } else {
+                            allSucceeded = false
+                        }
                     }
                 }
 
@@ -105,7 +138,10 @@ class SyncWorker(
                         .getInventoryForOrganization(sales.first().orgId)
                     Log.e("SyncWorker", "No inventory item found for: $itemName")
                     Log.e("SyncWorker", "Available: ${allItems.map { "${it.itemName} id=${it.id}" }}")
-                    allSucceeded = false
+                    sales.forEach { sale ->
+                        salesRepo.deleteSale(sale)
+                    }
+                    Log.w("SyncWorker", "Removed sales with missing inventory item from queue for: $itemName")
                     return@forEach
                 }
 
@@ -130,24 +166,39 @@ class SyncWorker(
                         salesRepo.deleteSale(sale)
                     }
 
-                    // Save one consolidated synced sale
-                    salesRepo.saveSale(
-                        sales.first().copy(
-                            id           = serverSale.id,
-                            itemQuantity = totalQuantitySold,
-                            buyingPrice  = serverSale.buying_price,    // ← new
-                            sellingPrice = serverSale.selling_price,   // ← new
-                            grossIncome  = serverSale.gross_income,    // ← new
-                            profit       = serverSale.profit,          // ← new
-                            vatAmount    = serverSale.vat_amount,      // ← new
-                            isSynced     = true
-                        )
+                    val syncedSale = sales.first().copy(
+                        id           = serverSale.id,
+                        itemQuantity = totalQuantitySold,
+                        buyingPrice  = serverSale.buying_price,
+                        sellingPrice = serverSale.selling_price,
+                        grossIncome  = serverSale.gross_income,
+                        profit       = serverSale.profit,
+                        vatAmount    = serverSale.vat_amount,
+                        isSynced     = true
+                    )
+
+                    salesRepo.saveSale(syncedSale)
+
+                    val saved = salesRepo.getSaleById(serverSale.id)
+                    Log.d(
+                        "SyncWorker",
+                        "Sale saved to Room: ${saved?.itemName} id=${saved?.id} synced=${saved?.isSynced}"
                     )
                     Log.d("SyncWorker", "Consolidated sale synced for: $itemName")
 
                 } else {
-                    Log.e("SyncWorker", "Failed: $itemName HTTP ${response.code()}: ${response.errorBody()?.string()}")
-                    allSucceeded = false
+                    val errorBody = response.errorBody()?.string().orEmpty()
+                    val decision = SyncErrorClassifier.classify(response.code(), errorBody)
+                    Log.e("SyncWorker", "Failed: $itemName HTTP ${response.code()}: $errorBody")
+
+                    if (decision.shouldDrop) {
+                        sales.forEach { sale ->
+                            salesRepo.deleteSale(sale)
+                        }
+                        Log.w("SyncWorker", "Removed permanently failed sales from queue for: $itemName")
+                    } else {
+                        allSucceeded = false
+                    }
                 }
 
             } catch (e: Exception) {
