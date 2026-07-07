@@ -21,6 +21,7 @@ class SessionManager(context: Context) {
         const val KEY_EMAIL   = "user_email"
         const val KEY_ADMIN_ORGS   = "admin_orgs"
         const val KEY_EMPLOYEE_ORGS = "employee_orgs"
+        const val KEY_IS_LOGGED_IN = "is_logged_in"
     }
 
     // Save user details after successful login or signup
@@ -31,6 +32,7 @@ class SessionManager(context: Context) {
             .putString(KEY_EMAIL,   email)
             .putString(KEY_ADMIN_ORGS,    Gson().toJson(adminOrgs))
             .putString(KEY_EMPLOYEE_ORGS, Gson().toJson(employeeOrgs))
+            .putBoolean(KEY_IS_LOGGED_IN, true)
             .apply()    // apply() saves asynchronously — never use commit() on the main thread
     }
 
@@ -50,7 +52,7 @@ class SessionManager(context: Context) {
         return Gson().fromJson(json, type)
     }
 
-    fun isLoggedIn(): Boolean = getUserId() != null
+    fun isLoggedIn(): Boolean = prefs.getBoolean(KEY_IS_LOGGED_IN, false) && getUserId() != -1
 
     // Clear everything on logout
     fun clearSession() {
