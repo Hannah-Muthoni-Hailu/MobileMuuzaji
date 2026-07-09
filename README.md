@@ -221,7 +221,7 @@ docker compose up --build
 
 ### Prerequisites
 
-- Java 17 or 21
+- Java 21
 - Android SDK (API 35)
 - A physical Android device (API 24+) or emulator
 - ADB installed
@@ -253,14 +253,67 @@ The APK will be at `app/build/outputs/apk/debug/app-debug.apk`.
 adb install app/build/outputs/apk/debug/app-debug.apk
 ```
 
+### Java version installation (Incase your system has a different Java version)
+Set up Android SDK
+```
+mkdir -p /workspaces/MobileMuuzaji/android-sdk/cmdline-tools
+cd /workspaces/MobileMuuzaji/android-sdk/cmdline-tools
+wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+unzip commandlinetools-linux-11076708_latest.zip
+mv cmdline-tools latest
+
+echo 'export ANDROID_HOME=/workspaces/MobileMuuzaji/android-sdk' >> ~/.bashrc
+echo 'export PATH=$PATH:$ANDROID_HOME/platform-tools' >> ~/.bashrc
+echo 'export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin' >> ~/.bashrc
+source ~/.bashrc
+
+source ~/.bashrc
+sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+```
+
+Create ```local.properties```
+```
+echo "sdk.dir=/workspaces/MobileMuuzaji/android-sdk" > /workspaces/MobileMuuzaji/MobileMuuzajiApp/local.properties
+```
+
+Determine the Java version being used currently
+```
+which java
+readlink -f $(which java) # If Java version 21 is in use skip this step
+```
+
+Install Java 21
+```
+sdk install java 21.0.11-ms
+
+# Switch to Java 21
+sdk use java 21.0.11-ms
+
+# Verify
+java -version
+```
+
+Get the path
+```
+readlink -f $(which java)
+# Will output something like /usr/local/sdkman/candidates/java/21.0.7-ms/bin/java
+```
+
+Ensure this is the path in ```gradle.properties```
+```
+org.gradle.java.home=/usr/local/sdkman/candidates/java/21.0.11-ms
+org.gradle.daemon=false
+```
+
 ### Gradle Properties
 
 The following properties are configured in `gradle.properties` and may need adjusting based on your development environment:
 
 ```properties
-org.gradle.java.home=/path/to/java/17/or/21
+org.gradle.java.home=/path/to/java/21
 org.gradle.daemon=false
-org.gradle.jvmargs=-Xmx1024m -XX:MaxMetaspaceSize=512m
+org.gradle.jvmargs=-Xmx1024m -XX:MaxMetaspaceSize=512m -XX:+HeapDumpOnOutOfMemoryError
+android.useAndroidX=true
 ```
 
 ---
@@ -318,7 +371,7 @@ org.gradle.jvmargs=-Xmx1024m -XX:MaxMetaspaceSize=512m
 
 ```python
 kilogram, gram, pound, ounce, metric_ton,
-liter, milliliter, gallon, fluid_ounce, cup
+liter, milliliter, gallon, fluid_ounce, cup, item
 ```
 
 ---
