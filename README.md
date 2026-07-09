@@ -1,4 +1,4 @@
-# MobileMuuzaji — Technical Documentation
+# MobileMuuzaji
 
 ## Table of Contents
 
