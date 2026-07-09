@@ -258,10 +258,10 @@ Set up Android SDK and java on Linux
 ```
 # Install Java
 sudo apt update
-sudo apt install -y openjdk-17-jdk
+sudo apt install -y openjdk-21-jdk
 
 # Verify
-java -version
+java -version # Should be Java version 21.0.11
 
 # Create a directory for Android SDK
 mkdir -p ~/android-sdk/cmdline-tools
