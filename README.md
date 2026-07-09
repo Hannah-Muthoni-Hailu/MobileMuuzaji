@@ -254,43 +254,37 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 ```
 
 ### Java version installation (Incase your system has a different Java version)
-Set up Android SDK
+Set up Android SDK and java on Linux
 ```
-mkdir -p /workspaces/MobileMuuzaji/android-sdk/cmdline-tools
-cd /workspaces/MobileMuuzaji/android-sdk/cmdline-tools
-wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
-unzip commandlinetools-linux-11076708_latest.zip
-mv cmdline-tools latest
-
-echo 'export ANDROID_HOME=/workspaces/MobileMuuzaji/android-sdk' >> ~/.bashrc
-echo 'export PATH=$PATH:$ANDROID_HOME/platform-tools' >> ~/.bashrc
-echo 'export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin' >> ~/.bashrc
-source ~/.bashrc
-
-source ~/.bashrc
-sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
-```
-
-Create ```local.properties```
-```
-echo "sdk.dir=/workspaces/MobileMuuzaji/android-sdk" > /workspaces/MobileMuuzaji/MobileMuuzajiApp/local.properties
-```
-
-Determine the Java version being used currently
-```
-which java
-readlink -f $(which java) # If Java version 21 is in use skip this step
-```
-
-Install Java 21
-```
-sdk install java 21.0.11-ms
-
-# Switch to Java 21
-sdk use java 21.0.11-ms
+# Install Java
+sudo apt update
+sudo apt install -y openjdk-17-jdk
 
 # Verify
 java -version
+
+# Create a directory for Android SDK
+mkdir -p ~/android-sdk/cmdline-tools
+
+# Download command line tools
+cd ~/android-sdk/cmdline-tools
+wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+
+# Unzip
+unzip commandlinetools-linux-11076708_latest.zip
+mv cmdline-tools latest
+
+# Set environment variables
+echo 'export ANDROID_HOME=$HOME/android-sdk' >> ~/.bashrc
+echo 'export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin' >> ~/.bashrc
+echo 'export PATH=$PATH:$ANDROID_HOME/platform-tools' >> ~/.bashrc
+source ~/.bashrc
+
+# Accept licenses
+sdkmanager --licenses
+
+# Install platform tools, build tools, and Android 14 (API 34)
+sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 ```
 
 Get the path
